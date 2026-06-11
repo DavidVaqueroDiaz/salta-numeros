@@ -205,6 +205,19 @@ PENDIENTE (en orden previsto):
    tecla `1` = gafas, `2` = arcoíris, `3` = sombrero, y siguientes números
    para futuros poderes (mismo orden que los iconos de la izquierda).
    Mostrar el numerito en cada icono para que se aprendan solos.
+   7c. **PRIORITARIO — el progreso "se pierde" al salir rápido del exe**
+   (reportado por Vaquero). Diagnóstico casi seguro: el lanzador busca
+   puerto libre desde 38754 hacia arriba; si se cierra y reabre rápido,
+   el puerto viejo sigue ocupado unos segundos → arranca en 38755 →
+   localStorage es POR ORIGEN → parece que faltan niveles (en realidad
+   están en el otro puerto; al reabrir más tarde "vuelven"). Arreglo:
+   a) lanzador SIEMPRE en 38754: reintentar unos segundos y, si sigue
+      ocupado, abrir el navegador contra la instancia ya viva y salir;
+   b) a prueba de balas: endpoints /api/progreso (GET/POST) en el
+      lanzador que guardan un JSON junto al exe, y el juego sincroniza
+      localStorage↔fichero al cargar y al guardar resultado;
+   c) botón **💾 Guardar progreso** en el menú de niveles (pedido) que
+      fuerza el volcado y confirma "guardado" (aunque b) ya lo haga solo).
 8. `gen-levels.mjs`: añadir `tema` a 11-25 y generar 26-35 nuevos;
    `nivel06-10` añadir tema a mano; nivelfinal tema castillo y clave 36;
    `index.ts` TOTAL_NIVELES=35, NIVEL_FINAL=36; CSS rejilla 7 columnas.
