@@ -54,6 +54,15 @@ hacer `npm run build` y después `build-exe.ps1`.
   vuelan y se convierten en los 10 personajes en fila → título.
 - Colores de nivel actualizados: 6 añil `#3f37c9`, 9 gris `#8d99ae`.
 
+## Gafas rediseñadas y tutoriales de ítems (2026-06-11, noche⁵)
+
+- Ítem gafas redibujado (parecía dos monedas): cristales rectangulares
+  amarillos translúcidos con montura, puente y patillas, balanceándose.
+- **Tutorial de primera vez**: al recoger cada tipo de ítem por primera
+  vez, el juego se pausa y sale una tarjeta (emoji + título + texto corto
+  + "¡Entendido!"). Visto queda guardado en localStorage
+  `salta-numeros-tutoriales` (settings.ts); las siguientes veces solo toast.
+
 ## Ajustes y desbloqueo con contraseña (2026-06-11, noche⁴)
 
 - Menú: botón **⚙️ Ajustes** (diálogo en #dialogo): sonido ON/OFF (silencia

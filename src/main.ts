@@ -14,8 +14,10 @@ import {
   formatearTiempo,
   mostrarMenu,
   mostrarResultados,
+  mostrarTutorialPoder,
   ocultarPantallas,
 } from './ui/screens'
+import { marcarTutorialVisto, tutorialVisto } from './storage/settings'
 import { guardarResultado } from './storage/progress'
 import { Intro } from './ui/intro'
 
@@ -264,6 +266,16 @@ function update(dt: number): void {
     item.recogido = true
     sonido.checkpoint()
     player.inventario[item.tipo]++
+    if (!tutorialVisto(item.tipo)) {
+      // primera vez: tarjeta explicativa con el juego en pausa
+      marcarTutorialVisto(item.tipo)
+      estado = 'puerta'
+      resetInput()
+      mostrarTutorialPoder(item.tipo, () => {
+        estado = 'jugando'
+      })
+      break
+    }
     const nombres = {
       gafas: '🕶️ Gafas guardadas',
       arcoiris: '🌈 Arcoíris guardado',

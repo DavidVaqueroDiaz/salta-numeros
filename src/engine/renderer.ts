@@ -151,19 +151,38 @@ export class Renderer {
       if (item.recogido) continue
       const y = item.cy + Math.sin(t * 3 + item.cx) * 4
       if (item.tipo === 'gafas') {
-        ctx.strokeStyle = '#e0a800'
-        ctx.fillStyle = '#ffd60a'
+        // gafas amarillas: cristales rectangulares, montura y patillas,
+        // balanceándose para que no se confundan con monedas
+        ctx.save()
+        ctx.translate(item.cx, y)
+        ctx.rotate(Math.sin(t * 2.2 + item.cx) * 0.22)
+        ctx.lineCap = 'round'
+        // patillas hacia atrás
+        ctx.strokeStyle = '#b8860b'
         ctx.lineWidth = 2.5
         for (const lado of [-1, 1]) {
           ctx.beginPath()
-          ctx.arc(item.cx + lado * 7, y, 6, 0, Math.PI * 2)
+          ctx.moveTo(lado * 14, -2)
+          ctx.lineTo(lado * 20, -7)
+          ctx.stroke()
+        }
+        // cristales rectangulares amarillos translúcidos
+        for (const lado of [-1, 1]) {
+          ctx.fillStyle = 'rgba(255,214,10,0.45)'
+          ctx.strokeStyle = '#e6b800'
+          ctx.lineWidth = 3
+          ctx.beginPath()
+          ctx.roundRect(lado * 8 - 7, -6, 14, 11, 4)
           ctx.fill()
           ctx.stroke()
         }
+        // puente
+        ctx.strokeStyle = '#e6b800'
         ctx.beginPath()
-        ctx.moveTo(item.cx - 1, y)
-        ctx.lineTo(item.cx + 1, y)
+        ctx.moveTo(-1.5, -3)
+        ctx.lineTo(1.5, -3)
         ctx.stroke()
+        ctx.restore()
       } else if (item.tipo === 'arcoiris') {
         const colores = ['#e63946', '#ffd60a', '#3a86ff']
         colores.forEach((color, i) => {

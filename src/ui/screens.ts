@@ -107,6 +107,64 @@ function cerrarDialogo(): void {
   dialogo.innerHTML = ''
 }
 
+const TUTORIALES: Record<string, { emoji: string; titulo: string; texto: string }> = {
+  gafas: {
+    emoji: '🕶️',
+    titulo: '¡Gafas de invisibilidad!',
+    texto:
+      'Te hacen INVISIBLE 8 segundos: los vigilantes no podrán verte. Se guardan en tu mochila — toca su icono a la izquierda cuando las necesites.',
+  },
+  arcoiris: {
+    emoji: '🌈',
+    titulo: '¡Arcoíris volador!',
+    texto:
+      'Te deja VOLAR 10 segundos manteniendo pulsado el botón de salto. Toca su icono a la izquierda cuando quieras despegar.',
+  },
+  sombrero: {
+    emoji: '🎩',
+    titulo: '¡Sombrero mágico!',
+    texto:
+      'Te TELETRANSPORTA: actívalo con su icono a la izquierda y después toca el lugar de la pantalla al que quieras viajar.',
+  },
+}
+
+/** Tarjeta explicativa de un ítem (primera vez que se recoge). */
+export function mostrarTutorialPoder(tipo: string, alCerrar: () => void): void {
+  const info = TUTORIALES[tipo]
+  if (!info) {
+    alCerrar()
+    return
+  }
+  const dialogo = document.getElementById('dialogo')!
+  dialogo.innerHTML = ''
+  const caja = document.createElement('div')
+  caja.className = 'dialogo-caja'
+
+  const emoji = document.createElement('div')
+  emoji.className = 'tutorial-emoji'
+  emoji.textContent = info.emoji
+
+  const titulo = document.createElement('p')
+  titulo.className = 'puerta-pregunta'
+  titulo.textContent = info.titulo
+
+  const texto = document.createElement('p')
+  texto.className = 'tutorial-texto'
+  texto.textContent = info.texto
+
+  const ok = document.createElement('button')
+  ok.className = 'boton-grande'
+  ok.textContent = '¡Entendido!'
+  ok.addEventListener('click', () => {
+    cerrarDialogo()
+    alCerrar()
+  })
+
+  caja.append(emoji, titulo, texto, ok)
+  dialogo.appendChild(caja)
+  dialogo.classList.remove('hidden')
+}
+
 /** Diálogo de contraseña para desbloquear todos los niveles. */
 function pedirContrasena(alElegir: (nivel: number) => void): void {
   const dialogo = document.getElementById('dialogo')!

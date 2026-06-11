@@ -227,6 +227,20 @@ body {
   color: var(--texto);
 }
 
+.tutorial-emoji {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.tutorial-texto {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--texto);
+  text-align: center;
+  margin: 0;
+  line-height: 1.35;
+}
+
 .dialogo-error {
   color: var(--rojo-mal);
   font-size: 20px;
