@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 21: La cámara del tesoro: sellada, solo se entra (y sale) por teletransporte.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel21: LevelData = {
-  numero: 1,
+  numero: 21,
   color: '#e63946',
   mapa: [
     '..............................................................................................................',

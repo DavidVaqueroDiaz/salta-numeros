@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 15: Aparece el arcoíris: hay que VOLAR sobre el barranco gigante.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel15: LevelData = {
-  numero: 5,
+  numero: 15,
   color: '#4cc9f0',
   mapa: [
     '..............................................................................................................',

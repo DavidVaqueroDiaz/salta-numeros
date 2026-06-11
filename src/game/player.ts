@@ -33,11 +33,16 @@ export class Player {
   tuboCooldownT = 0
   /** ¿está nadando ahora mismo? (lo rellena update) */
   enAgua = false
+  /** ítems recogidos sin usar: se activan tocando su icono en pantalla */
+  readonly inventario = { gafas: 0, arcoiris: 0, sombrero: 0 }
 
   limpiarPoderes(): void {
     this.invisibleT = 0
     this.volarT = 0
     this.teleUsos = 0
+    this.inventario.gafas = 0
+    this.inventario.arcoiris = 0
+    this.inventario.sombrero = 0
   }
   private plataforma: PlataformaPisable | null = null
   private puntoRespawn = { x: 0, y: 0 }

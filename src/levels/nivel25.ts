@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 25: Los tubos llevan a una zona submarina con peces de pinchos.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel25: LevelData = {
-  numero: 5,
+  numero: 25,
   color: '#4cc9f0',
   mapa: [
     '..............................................................................................................',

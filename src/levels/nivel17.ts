@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 17: Divisiones; el arcoíris permite alcanzar monedas altísimas.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel17: LevelData = {
-  numero: 7,
+  numero: 17,
   color: '#3a86ff',
   mapa: [
     '..............................................................................................................',

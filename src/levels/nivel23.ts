@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 23: Dos vigilantes, dos pares de gafas.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel23: LevelData = {
-  numero: 3,
+  numero: 23,
   color: '#ffd60a',
   mapa: [
     '..............................................................................................................',

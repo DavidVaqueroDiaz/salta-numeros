@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 12: Divisiones grandes y un vigilante tras las gafas.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel12: LevelData = {
-  numero: 2,
+  numero: 12,
   color: '#f77f00',
   mapa: [
     '..............................................................................................................',

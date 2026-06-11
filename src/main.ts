@@ -67,6 +67,7 @@ function irAlMenu(): void {
   level = null
   hud.classList.add('hidden')
   controles.classList.add('hidden')
+  document.getElementById('poderes')!.classList.add('hidden')
   ocultarPantallas()
   mostrarMenu(empezarNivel)
 }
@@ -141,6 +142,7 @@ function terminarNivel(): void {
     monedas,
   )
   controles.classList.add('hidden')
+  document.getElementById('poderes')!.classList.add('hidden')
   mostrarResultados(
     {
       nivel: nivelActual,
@@ -170,6 +172,36 @@ function morir(): void {
   if (level.jefe) level.jefe.bolas.length = 0
 }
 
+// --- Iconos de poderes (lado izquierdo): tocar para activar ---
+const poderes = document.getElementById('poderes')!
+const botonPoder = {
+  gafas: document.getElementById('poder-gafas')!,
+  arcoiris: document.getElementById('poder-arcoiris')!,
+  sombrero: document.getElementById('poder-sombrero')!,
+}
+
+botonPoder.gafas.addEventListener('click', () => {
+  if (estado !== 'jugando' || player.inventario.gafas <= 0 || player.invisibleT > 0) return
+  player.inventario.gafas--
+  player.invisibleT = 8
+  sonido.acierto()
+  avisar('🕶️ ¡Invisible 8 segundos! Los vigilantes no te ven')
+})
+botonPoder.arcoiris.addEventListener('click', () => {
+  if (estado !== 'jugando' || player.inventario.arcoiris <= 0 || player.volarT > 0) return
+  player.inventario.arcoiris--
+  player.volarT = 10
+  sonido.acierto()
+  avisar('🌈 ¡Puedes VOLAR 10 segundos! Mantén pulsado el salto')
+})
+botonPoder.sombrero.addEventListener('click', () => {
+  if (estado !== 'jugando' || player.inventario.sombrero <= 0 || player.teleUsos > 0) return
+  player.inventario.sombrero--
+  player.teleUsos = 1
+  sonido.acierto()
+  avisar('🎩 Toca la pantalla a donde quieras teletransportarte')
+})
+
 function actualizarPoderHud(): void {
   const hudPoder = document.getElementById('hud-power')!
   const partes: string[] = []
@@ -178,6 +210,32 @@ function actualizarPoderHud(): void {
   if (player.teleUsos > 0) partes.push('🎩 toca el destino')
   hudPoder.textContent = partes.join('  ')
   hudPoder.classList.toggle('hidden', partes.length === 0)
+
+  // iconos: visibles si tienes el ítem o si su poder está activo
+  const estadoPorTipo = {
+    gafas: { activoT: player.invisibleT, sufijo: 's' },
+    arcoiris: { activoT: player.volarT, sufijo: 's' },
+    sombrero: { activoT: player.teleUsos > 0 ? 1 : 0, sufijo: '' },
+  } as const
+  let algunoVisible = false
+  for (const tipo of ['gafas', 'arcoiris', 'sombrero'] as const) {
+    const btn = botonPoder[tipo]
+    const cuantos = player.inventario[tipo]
+    const activo = estadoPorTipo[tipo].activoT > 0
+    const visible = cuantos > 0 || activo
+    btn.classList.toggle('hidden', !visible)
+    btn.classList.toggle('activo', activo)
+    if (visible) {
+      algunoVisible = true
+      const emoji = tipo === 'gafas' ? '🕶️' : tipo === 'arcoiris' ? '🌈' : '🎩'
+      btn.textContent = activo
+        ? tipo === 'sombrero'
+          ? `${emoji}…`
+          : `${emoji}${Math.ceil(estadoPorTipo[tipo].activoT)}`
+        : `${emoji}×${cuantos}`
+    }
+  }
+  poderes.classList.toggle('hidden', !algunoVisible || estado !== 'jugando')
 }
 
 function update(dt: number): void {
@@ -199,21 +257,18 @@ function update(dt: number): void {
 
   player.update(dt, level)
 
-  // Ítems de poder
+  // Ítems de poder: se guardan en el inventario (iconos de la izquierda)
   for (const item of level.items) {
     if (item.recogido || !seSolapan(player.rect(), item.rect())) continue
     item.recogido = true
     sonido.checkpoint()
-    if (item.tipo === 'gafas') {
-      player.invisibleT = 8
-      avisar('🕶️ ¡Invisible 8 segundos! Los vigilantes no te ven')
-    } else if (item.tipo === 'arcoiris') {
-      player.volarT = 10
-      avisar('🌈 ¡Puedes VOLAR 10 segundos! Mantén pulsado el salto')
-    } else {
-      player.teleUsos = 1
-      avisar('🎩 ¡Sombrero mágico! Toca la pantalla para teletransportarte')
+    player.inventario[item.tipo]++
+    const nombres = {
+      gafas: '🕶️ Gafas guardadas',
+      arcoiris: '🌈 Arcoíris guardado',
+      sombrero: '🎩 Sombrero guardado',
     }
+    avisar(`${nombres[item.tipo]} — toca su icono cuando lo necesites`)
   }
 
   // Vigilantes: te persiguen si te ven (y no estás invisible)

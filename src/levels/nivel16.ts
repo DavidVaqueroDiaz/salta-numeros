@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 16: Tablas hasta el 9 con dos vigilantes.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel16: LevelData = {
-  numero: 6,
+  numero: 16,
   color: '#3f37c9',
   mapa: [
     '..............................................................................................................',

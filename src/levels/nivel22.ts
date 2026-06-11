@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 22: Alfombra de pinchos enorme: se cruza volando.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel22: LevelData = {
-  numero: 2,
+  numero: 22,
   color: '#f77f00',
   mapa: [
     '..............................................................................................................',

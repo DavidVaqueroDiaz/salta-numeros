@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 19: Dos pasos mentales, vuelo opcional y vigilante final.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel19: LevelData = {
-  numero: 9,
+  numero: 19,
   color: '#9aa5b1',
   mapa: [
     '..............................................................................................................',

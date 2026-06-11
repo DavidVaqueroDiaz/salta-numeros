@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 20: Aparece el sombrero: un MURO infranqueable que solo se cruza con magia.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel20: LevelData = {
-  numero: 10,
+  numero: 20,
   color: '#adb5bd',
   mapa: [
     '............................................................#.................................................',

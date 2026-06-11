@@ -54,6 +54,23 @@ hacer `npm run build` y después `build-exe.ps1`.
   vuelan y se convierten en los 10 personajes en fila → título.
 - Colores de nivel actualizados: 6 añil `#3f37c9`, 9 gris `#8d99ae`.
 
+## Personajes 11-25 e inventario de poderes (2026-06-11, noche³)
+
+- **Personajes 11-25 con identidad propia** (referencia: captura oficial que
+  pasó Vaquero): los 11-20 blancos con borde rojo y su acento (rojo 11,
+  naranja 12, amarillo 13, verde+gafas 14, **escalera con cian el 15**,
+  cuadrado ojos cuadrados 16, pintor con manchas 17, columna rosa 18,
+  columna gris 19, chistera+gafas moradas 20); los 21-25 crema con borde
+  naranja (gorro verde 21, … gafas azules 25). Tabla `ESTILOS` en
+  `character.ts` (base, borde, acentos por bloque, decos). El personaje del
+  nivel n ES el número n (gen-levels pone `numero: n`); el color del botón
+  del menú sigue ciclando la paleta 1-10.
+- **Inventario de poderes** (feedback Vaquero): recoger un ítem ya NO lo
+  activa; se guarda (`player.inventario`) y aparece su icono en la
+  IZQUIERDA (#poderes); tocar el icono lo activa (muestra ×cantidad, y en
+  activo los segundos restantes con pulso). Se pierde todo al morir o
+  cambiar de nivel; los ítems del mapa reaparecen al morir.
+
 ## Expansión: 25 niveles y poderes (2026-06-11, noche²)
 
 - **Niveles 11-25** generados con `tools/gen-levels.mjs` (colocación por

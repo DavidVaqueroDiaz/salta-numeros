@@ -176,6 +176,46 @@ body {
   font-size: 54px;
 }
 
+/* ---------- Iconos de poderes (lado izquierdo) ---------- */
+#poderes {
+  position: fixed;
+  left: max(14px, env(safe-area-inset-left));
+  top: 44%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 5;
+}
+
+.poder-btn {
+  width: 78px;
+  height: 78px;
+  border-radius: 22px;
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--texto);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+  line-height: 1.05;
+}
+
+.poder-btn:active {
+  transform: translateY(3px);
+}
+
+.poder-btn.activo {
+  background: #ffd60a;
+  border-color: #ffb703;
+  animation: pulso 0.9s infinite;
+}
+
+@keyframes pulso {
+  50% { transform: scale(1.08); }
+}
+
 /* ---------- Capas de pantalla completa ---------- */
 .overlay {
   position: fixed;

@@ -280,7 +280,8 @@ const NIVELES = {
 }
 
 for (const [n, def] of Object.entries(NIVELES)) {
-  const numero = ((n - 1) % 10) + 1
+  const numero = Number(n) // cada nivel tiene su personaje (11-25 con estilo propio)
+  const colorUi = ((n - 1) % 10) + 1 // color del botón/HUD: cicla la paleta base
   const aviso = def.aviso ? `\n  aviso: '${def.aviso}',` : ''
   const contenido = `import type { LevelData } from './types'
 
@@ -288,7 +289,7 @@ for (const [n, def] of Object.entries(NIVELES)) {
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel${n}: LevelData = {
   numero: ${numero},
-  color: '${COLORES[numero]}',
+  color: '${COLORES[colorUi]}',
   mapa: [
 ${def.mapa.map((f) => `    '${f}',`).join('\n')}
   ],

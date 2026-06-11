@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 13: Series lógicas avanzadas y dos vigilantes.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel13: LevelData = {
-  numero: 3,
+  numero: 13,
   color: '#ffd60a',
   mapa: [
     '..............................................................................................................',

@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 18: Series difíciles con vigilante de entrada y de salida.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel18: LevelData = {
-  numero: 8,
+  numero: 18,
   color: '#ff5d8f',
   mapa: [
     '..............................................................................................................',

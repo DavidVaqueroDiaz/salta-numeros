@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 14: Operaciones de dos pasos, plataforma móvil sobre el hueco.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel14: LevelData = {
-  numero: 4,
+  numero: 14,
   color: '#52b788',
   mapa: [
     '..............................................................................................................',

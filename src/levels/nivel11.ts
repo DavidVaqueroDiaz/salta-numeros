@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 11: Empieza la zona difícil: tablas hasta el 9 y un vigilante.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel11: LevelData = {
-  numero: 1,
+  numero: 11,
   color: '#e63946',
   mapa: [
     '..............................................................................................................',

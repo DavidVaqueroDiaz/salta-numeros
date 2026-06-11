@@ -3,7 +3,7 @@ import type { LevelData } from './types'
 // Nivel 24: Otro muro mágico y un vigilante guardando la meta.
 // (generado con tools/gen-levels.mjs; puede editarse a mano)
 export const nivel24: LevelData = {
-  numero: 4,
+  numero: 24,
   color: '#52b788',
   mapa: [
     '..........................................................#...................................................',
