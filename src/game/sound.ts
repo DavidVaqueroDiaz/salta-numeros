@@ -1,6 +1,12 @@
 // Sonidos generados con WebAudio: sin ficheros de audio, funciona offline.
 
 let ctx: AudioContext | null = null
+let sonidoActivado = true
+
+/** Silencia o reactiva todos los efectos (ajustes). */
+export function setSonidoActivado(v: boolean): void {
+  sonidoActivado = v
+}
 
 function audio(): AudioContext {
   if (!ctx) ctx = new AudioContext()
@@ -15,6 +21,7 @@ function nota(
   tipo: OscillatorType = 'square',
   vol = 0.08,
 ): void {
+  if (!sonidoActivado) return
   try {
     const ac = audio()
     const osc = ac.createOscillator()

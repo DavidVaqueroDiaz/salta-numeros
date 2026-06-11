@@ -10,6 +10,7 @@ import { NIVELES, NIVEL_FINAL } from './levels/index'
 import { generarPregunta } from './math/questions'
 import { abrirPuertaMatematica } from './ui/mathDoor'
 import {
+  aplicarAjustes,
   formatearTiempo,
   mostrarMenu,
   mostrarResultados,
@@ -424,6 +425,7 @@ function render(): void {
   else if (level) renderer.draw(level, player)
 }
 
+aplicarAjustes() // sonido y tamaño de controles guardados en el dispositivo
 startLoop(update, render)
 ocultarPantallas() // la intro arranca a pantalla limpia; al acabar va al menú
 

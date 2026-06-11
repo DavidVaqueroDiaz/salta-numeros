@@ -1,5 +1,15 @@
 import { COLORES, NIVELES, NIVEL_FINAL, TOTAL_NIVELES } from '../levels/index'
 import { cargarProgreso, nivelDesbloqueado } from '../storage/progress'
+import { cargarAjustes, guardarAjustes, type Ajustes } from '../storage/settings'
+import { setSonidoActivado } from '../game/sound'
+
+const CONTRASENA_DESBLOQUEO = '1566'
+
+/** Aplica los ajustes guardados (al arrancar y al cambiarlos). */
+export function aplicarAjustes(ajustes: Ajustes = cargarAjustes()): void {
+  setSonidoActivado(ajustes.sonido)
+  document.body.classList.toggle('controles-grandes', ajustes.controlesGrandes)
+}
 
 export function formatearTiempo(ms: number): string {
   return `${(ms / 1000).toFixed(1)} s`
@@ -9,26 +19,17 @@ export function estrellasTexto(n: number): string {
   return '★'.repeat(n) + '☆'.repeat(3 - n)
 }
 
-// Truco para papás: 7 toques en el título desbloquean todos los niveles
-// (solo durante la sesión; no toca el progreso guardado)
-let modoAbierto = false
-let toquesTitulo = 0
-
 /** Pinta el menú principal con la rejilla de niveles. */
 export function mostrarMenu(alElegir: (nivel: number) => void): void {
   const pantalla = document.getElementById('screen-menu')!
   const progreso = cargarProgreso()
+  const ajustes = cargarAjustes()
+  const modoAbierto = ajustes.desbloqueado
 
   pantalla.innerHTML = ''
   const titulo = document.createElement('h1')
   titulo.className = 'titulo'
   titulo.textContent = '🔢 Salta Números'
-  titulo.addEventListener('click', () => {
-    if (++toquesTitulo >= 7 && !modoAbierto) {
-      modoAbierto = true
-      mostrarMenu(alElegir)
-    }
-  })
   const subtitulo = document.createElement('p')
   subtitulo.className = 'subtitulo'
   subtitulo.textContent = modoAbierto ? '🔓 Todos los niveles abiertos' : 'Elige un nivel'
@@ -73,8 +74,171 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
     btnFinal.disabled = true
   }
 
-  pantalla.append(titulo, subtitulo, rejilla, btnFinal)
+  // Fila inferior: ajustes y desbloqueo con contraseña
+  const fila = document.createElement('div')
+  fila.className = 'fila-botones'
+
+  const btnAjustes = document.createElement('button')
+  btnAjustes.className = 'boton-grande secundario'
+  btnAjustes.textContent = '⚙️ Ajustes'
+  btnAjustes.addEventListener('click', () => abrirAjustes(alElegir))
+
+  const btnDesbloquear = document.createElement('button')
+  btnDesbloquear.className = 'boton-grande secundario'
+  btnDesbloquear.textContent = modoAbierto ? '🔒 Volver a bloquear' : '🔓 Desbloquear todo'
+  btnDesbloquear.addEventListener('click', () => {
+    if (modoAbierto) {
+      guardarAjustes({ ...ajustes, desbloqueado: false })
+      mostrarMenu(alElegir)
+    } else {
+      pedirContrasena(alElegir)
+    }
+  })
+
+  fila.append(btnAjustes, btnDesbloquear)
+
+  pantalla.append(titulo, subtitulo, rejilla, btnFinal, fila)
   pantalla.classList.remove('hidden')
+}
+
+function cerrarDialogo(): void {
+  const dialogo = document.getElementById('dialogo')!
+  dialogo.classList.add('hidden')
+  dialogo.innerHTML = ''
+}
+
+/** Diálogo de contraseña para desbloquear todos los niveles. */
+function pedirContrasena(alElegir: (nivel: number) => void): void {
+  const dialogo = document.getElementById('dialogo')!
+  dialogo.innerHTML = ''
+  const caja = document.createElement('div')
+  caja.className = 'dialogo-caja'
+
+  const texto = document.createElement('p')
+  texto.className = 'puerta-pregunta'
+  texto.textContent = '🔐 Contraseña'
+
+  const entrada = document.createElement('input')
+  entrada.className = 'entrada-clave'
+  entrada.type = 'password'
+  entrada.inputMode = 'numeric'
+  entrada.maxLength = 8
+  entrada.placeholder = '····'
+
+  const error = document.createElement('p')
+  error.className = 'dialogo-error'
+
+  const fila = document.createElement('div')
+  fila.className = 'fila-botones'
+  const ok = document.createElement('button')
+  ok.className = 'boton-grande'
+  ok.textContent = 'Entrar'
+  const comprobar = (): void => {
+    if (entrada.value === CONTRASENA_DESBLOQUEO) {
+      guardarAjustes({ ...cargarAjustes(), desbloqueado: true })
+      cerrarDialogo()
+      mostrarMenu(alElegir)
+    } else {
+      error.textContent = '❌ Contraseña incorrecta'
+      entrada.value = ''
+      entrada.focus()
+    }
+  }
+  ok.addEventListener('click', comprobar)
+  entrada.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') comprobar()
+  })
+  const cancelar = document.createElement('button')
+  cancelar.className = 'boton-grande secundario'
+  cancelar.textContent = 'Cancelar'
+  cancelar.addEventListener('click', cerrarDialogo)
+  fila.append(ok, cancelar)
+
+  caja.append(texto, entrada, error, fila)
+  dialogo.appendChild(caja)
+  dialogo.classList.remove('hidden')
+  entrada.focus()
+}
+
+/** Diálogo de ajustes: sonido, controles grandes y borrar progreso. */
+function abrirAjustes(alElegir: (nivel: number) => void): void {
+  const dialogo = document.getElementById('dialogo')!
+  dialogo.innerHTML = ''
+  const caja = document.createElement('div')
+  caja.className = 'dialogo-caja'
+
+  const texto = document.createElement('p')
+  texto.className = 'puerta-pregunta'
+  texto.textContent = '⚙️ Ajustes'
+  caja.appendChild(texto)
+
+  const filaOpcion = (
+    etiqueta: string,
+    valor: boolean,
+    alCambiar: (v: boolean) => void,
+    iconoOn = '🔔',
+    iconoOff = '🔕',
+  ): HTMLButtonElement => {
+    const btn = document.createElement('button')
+    btn.className = 'ajuste-fila'
+    let actual = valor
+    const pintar = (): void => {
+      btn.textContent = `${actual ? iconoOn : iconoOff} ${etiqueta}: ${actual ? 'SÍ' : 'NO'}`
+    }
+    btn.addEventListener('click', () => {
+      actual = !actual
+      alCambiar(actual)
+      pintar()
+    })
+    pintar()
+    return btn
+  }
+
+  const ajustes = cargarAjustes()
+  const filaSonido = filaOpcion('Sonido', ajustes.sonido, (v) => {
+    const a = { ...cargarAjustes(), sonido: v }
+    guardarAjustes(a)
+    aplicarAjustes(a)
+  })
+  const filaControles = filaOpcion(
+    'Botones gigantes',
+    ajustes.controlesGrandes,
+    (v) => {
+      const a = { ...cargarAjustes(), controlesGrandes: v }
+      guardarAjustes(a)
+      aplicarAjustes(a)
+    },
+    '🎮',
+    '🎮',
+  )
+  caja.append(filaSonido, filaControles)
+
+  const borrar = document.createElement('button')
+  borrar.className = 'ajuste-fila peligro'
+  borrar.textContent = '🗑️ Borrar progreso'
+  borrar.addEventListener('click', () => {
+    if (borrar.dataset.confirmar !== '1') {
+      borrar.dataset.confirmar = '1'
+      borrar.textContent = '⚠️ ¿Seguro? Se pierden estrellas y tiempos. Toca otra vez'
+      return
+    }
+    localStorage.removeItem('salta-numeros-v1')
+    cerrarDialogo()
+    mostrarMenu(alElegir)
+  })
+  caja.appendChild(borrar)
+
+  const cerrar = document.createElement('button')
+  cerrar.className = 'boton-grande'
+  cerrar.textContent = 'Cerrar'
+  cerrar.addEventListener('click', () => {
+    cerrarDialogo()
+    mostrarMenu(alElegir) // refresca por si se borró el progreso
+  })
+  caja.appendChild(cerrar)
+
+  dialogo.appendChild(caja)
+  dialogo.classList.remove('hidden')
 }
 
 export interface DatosResultado {
@@ -147,4 +311,5 @@ export function ocultarPantallas(): void {
   document.getElementById('screen-menu')!.classList.add('hidden')
   document.getElementById('screen-results')!.classList.add('hidden')
   document.getElementById('door-modal')!.classList.add('hidden')
+  document.getElementById('dialogo')!.classList.add('hidden')
 }

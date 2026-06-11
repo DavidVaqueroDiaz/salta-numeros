@@ -54,6 +54,17 @@ hacer `npm run build` y después `build-exe.ps1`.
   vuelan y se convierten en los 10 personajes en fila → título.
 - Colores de nivel actualizados: 6 añil `#3f37c9`, 9 gris `#8d99ae`.
 
+## Ajustes y desbloqueo con contraseña (2026-06-11, noche⁴)
+
+- Menú: botón **⚙️ Ajustes** (diálogo en #dialogo): sonido ON/OFF (silencia
+  WebAudio vía `setSonidoActivado`), **botones gigantes** (clase
+  `controles-grandes` en body) y **borrar progreso** (doble toque de
+  confirmación). Guardado en localStorage `salta-numeros-ajustes`
+  (`src/storage/settings.ts`), se aplica al arrancar (`aplicarAjustes`).
+- Botón **🔓 Desbloquear todo** con contraseña **1566**: abre todos los
+  niveles de forma persistente; el botón pasa a "🔒 Volver a bloquear"
+  (sin contraseña). Sustituye al truco de los 7 toques en el título.
+
 ## Personajes 11-25 e inventario de poderes (2026-06-11, noche³)
 
 - **Personajes 11-25 con identidad propia** (referencia: captura oficial que
