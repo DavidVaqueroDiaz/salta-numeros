@@ -238,6 +238,30 @@ body {
   cursor: default;
 }
 
+/* Botón del nivel final (jefe) */
+.final-btn {
+  border: none;
+  border-radius: 22px;
+  padding: 16px 34px;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--texto);
+  background: linear-gradient(#ffd60a, #ffb703);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+}
+
+.final-btn:active {
+  transform: translateY(3px);
+}
+
+.final-btn.bloqueado {
+  background: #8d99ae;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: default;
+  font-size: 20px;
+}
+
 /* ---------- Puerta matemática ---------- */
 .puerta-caja {
   background: var(--blanco);

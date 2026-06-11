@@ -30,12 +30,12 @@ for (const fichero of ficheros) {
       fallo(fichero, `fila ${i} mide ${f.length}, esperaba ${ancho}`)
   })
 
-  // 2. Una P y una M
+  // 2. Una P, y una meta: 'M' (bandera) o 'X' (Xiana, nivel final)
   const todo = filas.join('')
-  for (const [ch, nombre] of [['P', 'aparición'], ['M', 'meta']]) {
-    const n = todo.split(ch).length - 1
-    if (n !== 1) fallo(fichero, `hay ${n} '${ch}' (${nombre}), esperaba 1`)
-  }
+  const nP = todo.split('P').length - 1
+  if (nP !== 1) fallo(fichero, `hay ${nP} 'P' (aparición), esperaba 1`)
+  const nMetas = todo.split('M').length - 1 + (todo.split('X').length - 1)
+  if (nMetas !== 1) fallo(fichero, `hay ${nMetas} metas (M o X), esperaba 1`)
 
   const get = (c, r) => (r < 0 || r >= filas.length ? '.' : (filas[r][c] ?? '.'))
 
@@ -53,10 +53,10 @@ for (const fichero of ficheros) {
       fallo(fichero, `puerta col ${c}: saltable (altura ${filasD.length} sin techo)`)
   }
 
-  // 4. Pinchos y enemigos sobre suelo; P y M también
+  // 4. Pinchos, enemigos, jefe, Xiana, P y M: todos sobre suelo
   filas.forEach((f, r) =>
     [...f].forEach((ch, c) => {
-      if ('^EPM'.includes(ch) && get(c, r + 1) !== '#')
+      if ('^EPMBX'.includes(ch) && get(c, r + 1) !== '#')
         fallo(fichero, `'${ch}' en (col ${c}, fila ${r}) sin suelo debajo`)
     }),
   )

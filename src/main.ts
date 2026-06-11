@@ -6,7 +6,7 @@ import { Renderer } from './engine/renderer'
 import { Level, seSolapan, type Door } from './game/level'
 import { Player } from './game/player'
 import { sonido } from './game/sound'
-import { NIVELES } from './levels/index'
+import { NIVELES, NIVEL_FINAL } from './levels/index'
 import { generarPregunta } from './math/questions'
 import { abrirPuertaMatematica } from './ui/mathDoor'
 import {
@@ -151,6 +151,8 @@ function terminarNivel(): void {
       esNuevoRecord,
       monedas,
       totalMonedas: level.monedas.length,
+      titulo:
+        nivelActual === NIVEL_FINAL ? '❤️ ¡Has salvado a Xiana!' : undefined,
     },
     () => empezarNivel(nivelActual),
     irAlMenu,
@@ -183,6 +185,48 @@ function update(dt: number): void {
   level.enemigos.forEach((e) => e.update(dt, level!))
 
   player.update(dt, level)
+
+  // Jefe final: pisotón → reto matemático → pierde un corazón
+  const jefe = level.jefe
+  if (jefe) {
+    jefe.update(dt, level)
+    if (!jefe.muerto && seSolapan(player.rect(), jefe.rect())) {
+      const piesJugador = player.y + player.h
+      const esPisoton = player.vy > 100 && piesJugador < jefe.y + jefe.h * 0.5
+      if (esPisoton) {
+        player.vy = -380 // rebote
+        sonido.pisoton()
+        if (jefe.invulT <= 0) {
+          jefe.invulT = 1.2
+          estado = 'puerta'
+          resetInput()
+          abrirPuertaMatematica(generarPregunta({ tipo: 'reto', max: 5 }), (res) => {
+            erroresPuertas += res.errores
+            if (res.acertada) {
+              jefe.golpear()
+              if (jefe.muerto) {
+                sonido.victoria()
+                if (level?.xiana) level.xiana.libre = true
+                avisar('💛 ¡La jaula se ha abierto! Corre con Xiana')
+              } else {
+                avisar(`💜 ¡Al Comecubos le quedan ${jefe.vidas} corazones!`)
+              }
+            } else {
+              avisar('💪 ¡Salta sobre él y prueba otra vez!')
+            }
+            estado = 'jugando'
+          })
+        }
+      } else {
+        morir()
+      }
+    }
+  }
+
+  // Xiana: tocarla (ya libre) completa el nivel final
+  if (level.xiana?.libre && seSolapan(player.rect(), level.xiana.rect())) {
+    terminarNivel()
+  }
 
   // Enemigos: saltar encima los aplasta; chocar de lado manda al respawn
   for (const e of level.enemigos) {
@@ -222,7 +266,7 @@ function update(dt: number): void {
 
   comprobarPuertas()
 
-  if (seSolapan(player.rect(), level.goal)) terminarNivel()
+  if (level.goal.w > 0 && seSolapan(player.rect(), level.goal)) terminarNivel()
 }
 
 function render(): void {

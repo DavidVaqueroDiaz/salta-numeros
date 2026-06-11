@@ -7,6 +7,7 @@ import {
   PlataformaMovil,
   type PlataformaPisable,
 } from './entities'
+import { Jefe, Xiana } from './boss'
 
 export const TILE = 32
 
@@ -39,13 +40,16 @@ export class Level {
   readonly tiles: Uint8Array
   readonly doors: Door[] = []
   readonly spawn = { x: TILE, y: TILE }
-  readonly goal: Rect = { x: 0, y: 0, w: TILE, h: TILE * 2 }
+  /** w = 0 hasta que el mapa define una 'M' (el nivel final no tiene meta) */
+  readonly goal: Rect = { x: 0, y: 0, w: 0, h: TILE * 2 }
   readonly data: LevelData
   readonly monedas: Moneda[] = []
   readonly enemigos: Enemigo[] = []
   readonly moviles: PlataformaMovil[] = []
   readonly caedizas: PlataformaCaediza[] = []
   readonly checkpoints: Checkpoint[] = []
+  jefe: Jefe | null = null
+  xiana: Xiana | null = null
 
   constructor(data: LevelData) {
     this.data = data
@@ -83,6 +87,10 @@ export class Level {
           this.caedizas.push(new PlataformaCaediza(c, r, this.rows * TILE))
         } else if (ch === 'C') {
           this.checkpoints.push(new Checkpoint(c, r))
+        } else if (ch === 'B') {
+          this.jefe = new Jefe(c, r)
+        } else if (ch === 'X') {
+          this.xiana = new Xiana(c, r)
         }
       }
     }

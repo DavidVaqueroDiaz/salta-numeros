@@ -54,6 +54,22 @@ hacer `npm run build` y después `build-exe.ps1`.
   vuelan y se convierten en los 10 personajes en fila → título.
 - Colores de nivel actualizados: 6 añil `#3f37c9`, 9 gris `#8d99ae`.
 
+## Nivel final: el Comecubos y Xiana (2026-06-11, noche)
+
+- `src/levels/nivel11.ts` (NIVEL_FINAL=11): se desbloquea al completar el
+  nivel 10 (botón dorado bajo la rejilla del menú). Se juega con el 10.
+- `src/game/boss.ts`: **el Comecubos**, jefe con 3 corazones que patrulla
+  la arena (acotado para no acercarse a la jaula). Pisotón → reto
+  matemático: acierto = pierde un corazón y acelera; fallo/cerrar = nada.
+  Tocarlo de lado = respawn. Tercer acierto → cae y la jaula se abre.
+- **Xiana** (hermana de Joel, rubia con coletas y vestido rosa) espera
+  enjaulada al final; al liberarla celebra con corazones y tocarla termina
+  el nivel con el título "❤️ ¡Has salvado a Xiana!".
+- Mapa: chars nuevos `B` (jefe) y `X` (Xiana = meta sin bandera; goal.w=0).
+  Validador actualizado (meta = M o X; B y X deben pisar suelo).
+- Nota: renderer.ts tenía mojibake por una edición con PowerShell sin
+  codificación correcta (p. ej. el ✓ del checkpoint); reescrito limpio.
+
 ## Mecánicas del personaje y del mundo (fase 2)
 
 - Coyote time (en tiempo de juego, no de reloj) + jump buffer + salto variable.

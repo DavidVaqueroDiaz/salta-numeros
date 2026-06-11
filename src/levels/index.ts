@@ -9,6 +9,7 @@ import { nivel7 } from './nivel07'
 import { nivel8 } from './nivel08'
 import { nivel9 } from './nivel09'
 import { nivel10 } from './nivel10'
+import { nivel11 } from './nivel11'
 
 /** Colores oficiales estilo Numberblocks, del 1 al 10. */
 export const COLORES: Record<number, string> = {
@@ -37,4 +38,8 @@ export const NIVELES: Record<number, LevelData> = {
   8: nivel8,
   9: nivel9,
   10: nivel10,
+  11: nivel11, // nivel final: el Comecubos y Xiana
 }
+
+/** Número del nivel final (jefe). */
+export const NIVEL_FINAL = 11

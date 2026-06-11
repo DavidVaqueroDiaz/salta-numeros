@@ -1,4 +1,4 @@
-import { COLORES, NIVELES, TOTAL_NIVELES } from '../levels/index'
+import { COLORES, NIVELES, NIVEL_FINAL, TOTAL_NIVELES } from '../levels/index'
 import { cargarProgreso, nivelDesbloqueado } from '../storage/progress'
 
 export function formatearTiempo(ms: number): string {
@@ -47,7 +47,22 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
     rejilla.appendChild(btn)
   }
 
-  pantalla.append(titulo, subtitulo, rejilla)
+  // Botón del nivel final: se abre al completar el nivel 10
+  const btnFinal = document.createElement('button')
+  btnFinal.className = 'final-btn'
+  if (nivelDesbloqueado(NIVEL_FINAL, progreso) && NIVEL_FINAL in NIVELES) {
+    const hecho = progreso[NIVEL_FINAL]?.completed
+    btnFinal.textContent = hecho
+      ? `⭐ ¡Salva a Xiana otra vez! ${estrellasTexto(progreso[NIVEL_FINAL]?.stars ?? 0)}`
+      : '⭐ NIVEL FINAL: ¡salva a Xiana!'
+    btnFinal.addEventListener('click', () => alElegir(NIVEL_FINAL))
+  } else {
+    btnFinal.classList.add('bloqueado')
+    btnFinal.textContent = '🔒 Completa el nivel 10 para salvar a Xiana'
+    btnFinal.disabled = true
+  }
+
+  pantalla.append(titulo, subtitulo, rejilla, btnFinal)
   pantalla.classList.remove('hidden')
 }
 
@@ -59,6 +74,8 @@ export interface DatosResultado {
   esNuevoRecord: boolean
   monedas: number
   totalMonedas: number
+  /** título alternativo (p. ej. el del nivel final) */
+  titulo?: string
 }
 
 /** Pantalla de fin de nivel: estrellas, tiempo, récord y botones. */
@@ -76,7 +93,7 @@ export function mostrarResultados(
   const titulo = document.createElement('h2')
   titulo.className = 'titulo'
   titulo.style.fontSize = '40px'
-  titulo.textContent = `¡Nivel ${datos.nivel} superado!`
+  titulo.textContent = datos.titulo ?? `¡Nivel ${datos.nivel} superado!`
 
   const estrellas = document.createElement('div')
   estrellas.className = 'resultado-estrellas'

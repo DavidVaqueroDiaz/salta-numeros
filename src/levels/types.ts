@@ -26,6 +26,7 @@ export interface LevelData {
    *   o = moneda               E = enemigo que patrulla
    *   m = plataforma móvil horizontal   w = móvil vertical
    *   F = plataforma que se cae         C = punto de control
+   *   B = jefe final (Comecubos)        X = Xiana (meta del nivel final)
    */
   mapa: string[]
   puertas: DoorSpec
