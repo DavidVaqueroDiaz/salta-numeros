@@ -159,8 +159,20 @@ hacer `npm run build` y después `build-exe.ps1`.
       física, puertas, meta, guardado, pisotón/golpe, monedas, checkpoints,
       móviles, caedizas, doble salto (solo niv. 7+), desbloqueo del menú
       y 200 preguntas generadas sin fallos.
-- [ ] **Fase 3** — Pulido (animaciones, pantalla de victoria final al acabar
-      el 10) y despliegue HTTPS para la tablet (GitHub Pages o Netlify).
+- [ ] **Fase 3** — Despliegue HTTPS para la tablet (GitHub Pages o Netlify).
+
+## Ideas propuestas pendientes de decidir (2026-06-11)
+
+1. Hosting HTTPS + instalación PWA en la tablet de Joel (lo único del
+   encargo original que falta).
+2. Cinemática de cierre al salvar a Xiana + contador total de estrellas
+   y monedas en el menú con premio al 100 %.
+3. Pistas visuales estilo Numberblocks en las puertas: al fallar, dibujar
+   la operación con bloquecitos de colores.
+4. Música chiptune de fondo (con interruptor en Ajustes), squash & stretch
+   del personaje, parpadeo de ojos, vibración háptica y botón de pausa.
+5. Tienda de complementos (gorras, coronas, capas) comprables con monedas.
+6. Informe para papá en Ajustes: % de aciertos por tipo de operación.
 
 ## Notas técnicas
 
