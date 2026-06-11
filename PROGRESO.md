@@ -201,6 +201,10 @@ PENDIENTE (en orden previsto):
    level.data.numero), y reescritura bonita de xianaDibujo.
 7. `main.ts`: personaje equipado, sumar monedas a la hucha en
    terminarNivel, refrescar tras cerrar tienda.
+   7b. **Atajos de teclado para los poderes** (pedido 2026-06-11 noche):
+   tecla `1` = gafas, `2` = arcoíris, `3` = sombrero, y siguientes números
+   para futuros poderes (mismo orden que los iconos de la izquierda).
+   Mostrar el numerito en cada icono para que se aprendan solos.
 8. `gen-levels.mjs`: añadir `tema` a 11-25 y generar 26-35 nuevos;
    `nivel06-10` añadir tema a mano; nivelfinal tema castillo y clave 36;
    `index.ts` TOTAL_NIVELES=35, NIVEL_FINAL=36; CSS rejilla 7 columnas.
