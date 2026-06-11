@@ -9,7 +9,12 @@ export function estrellasTexto(n: number): string {
   return '★'.repeat(n) + '☆'.repeat(3 - n)
 }
 
-/** Pinta el menú principal con la rejilla de niveles 1–10. */
+// Truco para papás: 7 toques en el título desbloquean todos los niveles
+// (solo durante la sesión; no toca el progreso guardado)
+let modoAbierto = false
+let toquesTitulo = 0
+
+/** Pinta el menú principal con la rejilla de niveles. */
 export function mostrarMenu(alElegir: (nivel: number) => void): void {
   const pantalla = document.getElementById('screen-menu')!
   const progreso = cargarProgreso()
@@ -18,9 +23,15 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
   const titulo = document.createElement('h1')
   titulo.className = 'titulo'
   titulo.textContent = '🔢 Salta Números'
+  titulo.addEventListener('click', () => {
+    if (++toquesTitulo >= 7 && !modoAbierto) {
+      modoAbierto = true
+      mostrarMenu(alElegir)
+    }
+  })
   const subtitulo = document.createElement('p')
   subtitulo.className = 'subtitulo'
-  subtitulo.textContent = 'Elige un nivel'
+  subtitulo.textContent = modoAbierto ? '🔓 Todos los niveles abiertos' : 'Elige un nivel'
 
   const rejilla = document.createElement('div')
   rejilla.className = 'niveles'
@@ -28,10 +39,10 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
   for (let n = 1; n <= TOTAL_NIVELES; n++) {
     const btn = document.createElement('button')
     btn.className = 'nivel-btn'
-    const desbloqueado = nivelDesbloqueado(n, progreso) && n in NIVELES
+    const desbloqueado = (modoAbierto || nivelDesbloqueado(n, progreso)) && n in NIVELES
 
     if (desbloqueado) {
-      btn.style.background = COLORES[n]
+      btn.style.background = COLORES[((n - 1) % 10) + 1]
       const num = document.createElement('span')
       num.textContent = String(n)
       const estrellas = document.createElement('span')
@@ -50,7 +61,7 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
   // Botón del nivel final: se abre al completar el nivel 10
   const btnFinal = document.createElement('button')
   btnFinal.className = 'final-btn'
-  if (nivelDesbloqueado(NIVEL_FINAL, progreso) && NIVEL_FINAL in NIVELES) {
+  if ((modoAbierto || nivelDesbloqueado(NIVEL_FINAL, progreso)) && NIVEL_FINAL in NIVELES) {
     const hecho = progreso[NIVEL_FINAL]?.completed
     btnFinal.textContent = hecho
       ? `⭐ ¡Salva a Xiana otra vez! ${estrellasTexto(progreso[NIVEL_FINAL]?.stars ?? 0)}`
@@ -58,7 +69,7 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
     btnFinal.addEventListener('click', () => alElegir(NIVEL_FINAL))
   } else {
     btnFinal.classList.add('bloqueado')
-    btnFinal.textContent = '🔒 Completa el nivel 10 para salvar a Xiana'
+    btnFinal.textContent = `🔒 Completa el nivel ${TOTAL_NIVELES} para salvar a Xiana`
     btnFinal.disabled = true
   }
 

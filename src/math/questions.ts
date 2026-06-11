@@ -70,14 +70,53 @@ export function generarPregunta(spec: DoorSpec): Pregunta {
       }
     }
     case 'multiplicacion': {
-      const a = azar(2, Math.min(5, spec.max))
-      const b = azar(2, Math.min(5, spec.max))
+      const a = azar(2, Math.min(9, spec.max))
+      const b = azar(2, Math.min(9, spec.max))
       return conDistractores(`${a} × ${b} = ?`, a * b)
     }
     case 'division': {
-      const b = azar(2, Math.min(5, spec.max))
-      const c = azar(2, Math.min(5, spec.max))
+      const b = azar(2, Math.min(9, spec.max))
+      const c = azar(2, Math.min(9, spec.max))
       return conDistractores(`${b * c} ÷ ${b} = ?`, c)
+    }
+    case 'logica2': {
+      const patron = azar(1, 3)
+      if (patron === 1) {
+        // serie geométrica: cada número es el doble
+        const a = azar(1, 3)
+        return conDistractores(`${a}, ${a * 2}, ${a * 4}, ¿?`, a * 8)
+      }
+      if (patron === 2) {
+        // serie descendente
+        const paso = azar(2, 4)
+        const inicio = azar(paso * 3 + 1, 20)
+        const serie = [inicio, inicio - paso, inicio - paso * 2]
+        return conDistractores(`${serie.join(', ')}, ¿?`, inicio - paso * 3)
+      }
+      // saltos grandes
+      const paso = azar(4, 6)
+      const inicio = azar(1, 6)
+      const serie = [inicio, inicio + paso, inicio + paso * 2]
+      return conDistractores(`${serie.join(', ')}, ¿?`, inicio + paso * 3)
+    }
+    case 'operacion': {
+      if (Math.random() < 0.5) {
+        const a = azar(1, 4)
+        const b = azar(1, 4)
+        const c = azar(2, 3)
+        return conDistractores(`(${a} + ${b}) × ${c} = ?`, (a + b) * c)
+      }
+      const a = azar(2, 5)
+      const b = azar(2, 4)
+      const c = azar(1, Math.min(5, a * b - 1))
+      return conDistractores(`${a} × ${b} − ${c} = ?`, a * b - c)
+    }
+    case 'reto2': {
+      const tipos = ['multiplicacion', 'division', 'logica2', 'operacion'] as const
+      return generarPregunta({
+        tipo: tipos[Math.floor(Math.random() * tipos.length)],
+        max: 9,
+      })
     }
     case 'reto': {
       const tipos = ['multiplicacion', 'division', 'logica'] as const

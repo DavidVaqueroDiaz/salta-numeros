@@ -87,6 +87,16 @@ body {
   box-shadow: var(--sombra);
 }
 
+#hud-power {
+  font-size: 22px;
+  font-weight: 800;
+  color: #6d28d9;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 14px;
+  border-radius: 14px;
+  box-shadow: var(--sombra);
+}
+
 #toast {
   position: fixed;
   top: 84px;
@@ -199,19 +209,19 @@ body {
   margin: 0 0 8px;
 }
 
-/* Rejilla de niveles */
+/* Rejilla de niveles (25 niveles: 5×5) */
 .niveles {
   display: grid;
-  grid-template-columns: repeat(5, minmax(86px, 110px));
-  gap: 14px;
+  grid-template-columns: repeat(5, minmax(58px, 76px));
+  gap: 9px;
 }
 
 .nivel-btn {
   position: relative;
   aspect-ratio: 1;
   border: none;
-  border-radius: 20px;
-  font-size: 38px;
+  border-radius: 16px;
+  font-size: 26px;
   font-weight: 900;
   color: var(--blanco);
   box-shadow: var(--sombra);
@@ -220,7 +230,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .nivel-btn:active {
@@ -228,7 +238,7 @@ body {
 }
 
 .nivel-btn .estrellas {
-  font-size: 16px;
+  font-size: 11px;
   line-height: 1;
 }
 

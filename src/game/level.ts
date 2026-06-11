@@ -2,9 +2,13 @@ import type { DoorSpec, LevelData } from '../levels/types'
 import {
   Checkpoint,
   Enemigo,
+  ItemPoder,
   Moneda,
+  Pez,
   PlataformaCaediza,
   PlataformaMovil,
+  Tubo,
+  Vigilante,
   type PlataformaPisable,
 } from './entities'
 import { Jefe, Xiana } from './boss'
@@ -30,6 +34,7 @@ export interface Door {
 
 const SOLIDO = 1
 const PINCHO = 2
+const AGUA = 3
 
 /** Nivel ya interpretado: rejilla de tiles + entidades (puertas, meta, spawn). */
 export class Level {
@@ -48,6 +53,10 @@ export class Level {
   readonly moviles: PlataformaMovil[] = []
   readonly caedizas: PlataformaCaediza[] = []
   readonly checkpoints: Checkpoint[] = []
+  readonly vigilantes: Vigilante[] = []
+  readonly peces: Pez[] = []
+  readonly tubos: Tubo[] = []
+  readonly items: ItemPoder[] = []
   jefe: Jefe | null = null
   xiana: Xiana | null = null
 
@@ -91,8 +100,29 @@ export class Level {
           this.jefe = new Jefe(c, r)
         } else if (ch === 'X') {
           this.xiana = new Xiana(c, r)
+        } else if (ch === 'V') {
+          this.vigilantes.push(new Vigilante(c, r))
+        } else if (ch === '~') {
+          this.tiles[r * this.cols + c] = AGUA
+        } else if (ch === 'f') {
+          this.tiles[r * this.cols + c] = AGUA // el pez nada en agua
+          this.peces.push(new Pez(c, r))
+        } else if (ch === 'T') {
+          this.tubos.push(new Tubo(c, r))
+        } else if (ch === 'G') {
+          this.items.push(new ItemPoder('gafas', c * TILE + 16, r * TILE + 16))
+        } else if (ch === 'R') {
+          this.items.push(new ItemPoder('arcoiris', c * TILE + 16, r * TILE + 16))
+        } else if (ch === 'H') {
+          this.items.push(new ItemPoder('sombrero', c * TILE + 16, r * TILE + 16))
         }
       }
+    }
+
+    // Los tubos se emparejan por orden de aparición: 1º↔2º, 3º↔4º…
+    for (let i = 0; i + 1 < this.tubos.length; i += 2) {
+      this.tubos[i].par = this.tubos[i + 1]
+      this.tubos[i + 1].par = this.tubos[i]
     }
   }
 
@@ -134,6 +164,10 @@ export class Level {
 
   esPincho(c: number, r: number): boolean {
     return this.tileAt(c, r) === PINCHO
+  }
+
+  esAgua(c: number, r: number): boolean {
+    return this.tileAt(c, r) === AGUA
   }
 
   /** Todo lo pisable desde arriba (móviles + caedizas). */

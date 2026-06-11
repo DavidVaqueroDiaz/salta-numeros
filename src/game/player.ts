@@ -22,12 +22,30 @@ export class Player {
   private saltosUsados = 0
   /** segundos (de juego) desde la última vez que pisó algo */
   private aireT = 99
+  // --- poderes (se pierden al morir) ---
+  /** segundos restantes de invisibilidad (gafas amarillas) */
+  invisibleT = 0
+  /** segundos restantes de vuelo (mini arcoíris) */
+  volarT = 0
+  /** usos del teletransporte (sombrero rojo) */
+  teleUsos = 0
+  /** evita rebotar entre tubos al instante */
+  tuboCooldownT = 0
+  /** ¿está nadando ahora mismo? (lo rellena update) */
+  enAgua = false
+
+  limpiarPoderes(): void {
+    this.invisibleT = 0
+    this.volarT = 0
+    this.teleUsos = 0
+  }
   private plataforma: PlataformaPisable | null = null
   private puntoRespawn = { x: 0, y: 0 }
 
   /** Coloca al jugador al inicio del nivel y fija ahí el respawn. */
   empezar(level: Level): void {
     this.puntoRespawn = { x: level.spawn.x, y: level.spawn.y }
+    this.limpiarPoderes()
     this.respawn()
   }
 
@@ -51,6 +69,15 @@ export class Player {
   }
 
   update(dt: number, level: Level): void {
+    // --- Temporizadores de poderes ---
+    this.invisibleT = Math.max(0, this.invisibleT - dt)
+    this.volarT = Math.max(0, this.volarT - dt)
+    this.tuboCooldownT = Math.max(0, this.tuboCooldownT - dt)
+    this.enAgua = level.esAgua(
+      Math.floor((this.x + this.w / 2) / TILE),
+      Math.floor((this.y + this.h / 2) / TILE),
+    )
+
     // --- Arrastre de la plataforma sobre la que está subido ---
     if (this.plataforma) {
       const p = this.plataforma
@@ -78,25 +105,39 @@ export class Player {
     this.x += dir * VELOCIDAD * dt
     this.resolverHorizontal(level, dir)
 
-    // --- Salto: buffer + coyote + doble salto si el nivel lo permite ---
-    const sobreAlgo = this.enSuelo || this.plataforma !== null
-    const conCoyote = sobreAlgo || this.aireT < COYOTE_MS / 1000
-    const dobleDisponible = this.maxSaltos > 1 && this.saltosUsados < this.maxSaltos
-    if ((conCoyote || dobleDisponible) && consumeJump()) {
-      this.vy = -VEL_SALTO
-      this.enSuelo = false
-      this.plataforma = null
-      // En el aire, el salto extra siempre cuenta como el último disponible
-      this.saltosUsados = conCoyote ? 1 : Math.max(this.saltosUsados + 1, this.maxSaltos)
-      this.aireT = 99 // que el coyote no regale un tercer salto justo tras despegar
-      sonido.salto()
-    }
-    // Salto variable: si suelta el botón mientras sube, corta el impulso
-    if (!input.jumpHeld && this.vy < -200) this.vy = -200
-
-    // --- Gravedad y movimiento vertical ---
     const pies0 = this.y + this.h
-    this.vy = Math.min(this.vy + GRAVEDAD * dt, CAIDA_MAX)
+    if (this.enAgua) {
+      // --- Buceo: cada toque de salto es un braceo, sin límite ---
+      if (consumeJump()) {
+        this.vy = -230
+        sonido.salto()
+      }
+      this.vy = Math.min(this.vy + 420 * dt, 200)
+      if (this.vy < -260) this.vy = -260
+      this.saltosUsados = 0
+    } else {
+      // --- Salto: buffer + coyote + doble salto ---
+      const sobreAlgo = this.enSuelo || this.plataforma !== null
+      const conCoyote = sobreAlgo || this.aireT < COYOTE_MS / 1000
+      const dobleDisponible = this.maxSaltos > 1 && this.saltosUsados < this.maxSaltos
+      if ((conCoyote || dobleDisponible) && consumeJump()) {
+        this.vy = -VEL_SALTO
+        this.enSuelo = false
+        this.plataforma = null
+        // En el aire, el salto extra siempre cuenta como el último disponible
+        this.saltosUsados = conCoyote ? 1 : Math.max(this.saltosUsados + 1, this.maxSaltos)
+        this.aireT = 99 // que el coyote no regale un tercer salto justo tras despegar
+        sonido.salto()
+      }
+      // Salto variable: si suelta el botón mientras sube, corta el impulso
+      if (!input.jumpHeld && this.vy < -200) this.vy = -200
+
+      this.vy = Math.min(this.vy + GRAVEDAD * dt, CAIDA_MAX)
+      // --- Vuelo (arcoíris): mantener el salto empuja hacia arriba ---
+      if (this.volarT > 0 && input.jumpHeld) {
+        this.vy = Math.max(this.vy - 3400 * dt, -280)
+      }
+    }
     this.y += this.vy * dt
     this.resolverVertical(level)
 

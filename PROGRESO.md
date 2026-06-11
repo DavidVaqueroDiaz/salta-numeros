@@ -54,6 +54,32 @@ hacer `npm run build` y después `build-exe.ps1`.
   vuelan y se convierten en los 10 personajes en fila → título.
 - Colores de nivel actualizados: 6 añil `#3f37c9`, 9 gris `#8d99ae`.
 
+## Expansión: 25 niveles y poderes (2026-06-11, noche²)
+
+- **Niveles 11-25** generados con `tools/gen-levels.mjs` (colocación por
+  coordenadas, sin contar puntos a mano; los .ts siguen siendo editables).
+  Mates difíciles: tablas/divisiones hasta el 9, `logica2` (series ×2,
+  descendentes, saltos grandes), `operacion` ((a+b)×c, a×b−c) y `reto2`.
+- **Un poder nuevo cada 5 niveles** (los ítems reaparecen al morir y los
+  poderes se pierden al morir o cambiar de nivel):
+  - Nivel 10 → 🕶️ **gafas** (8 s invisible). Nuevo enemigo **vigilante** ('V'):
+    haz de visión dibujado; si te ve carga contra ti; invisible no te ve;
+    se mata con pisotón.
+  - Nivel 15 → 🌈 **arcoíris** ('R'): volar 10 s manteniendo el salto
+    (barrancos de hasta 14 tiles, validador avisado).
+  - Nivel 20 → 🎩 **sombrero** ('H'): 1 teletransporte tocando la pantalla
+    (muros de columna completa que solo se cruzan así; nivel 21 tiene una
+    cámara del tesoro sellada con un 2º sombrero dentro para salir).
+  - Nivel 25 → 🟢 **tubos** ('T', emparejados por orden) y **buceo**: agua
+    ('~', braceo con el botón de salto), peces con pinchos ('f'), mapa de
+    20 filas con cámara vertical (el renderer ya no escala por nivel).
+- **Jefe final (ahora nivel 26)**: lanza bolas de fuego en arco hacia el
+  jugador (más rápido con menos corazones); si estás invisible no te ve y
+  deja de disparar. En la arena hay G, R y H para usar los poderes.
+- **Menú**: rejilla 5×5. Truco para papás: **7 toques en el título**
+  desbloquean todos los niveles durante la sesión (sin tocar el progreso).
+- HUD nuevo: indicador de poderes (#hud-power) con segundos restantes.
+
 ## Nivel final: el Comecubos y Xiana (2026-06-11, noche)
 
 - `src/levels/nivel11.ts` (NIVEL_FINAL=11): se desbloquea al completar el

@@ -3,7 +3,7 @@ import { registerSW } from 'virtual:pwa-register'
 import { startLoop } from './engine/loop'
 import { resetInput, setupInput } from './engine/input'
 import { Renderer } from './engine/renderer'
-import { Level, seSolapan, type Door } from './game/level'
+import { Level, TILE, seSolapan, type Door } from './game/level'
 import { Player } from './game/player'
 import { sonido } from './game/sound'
 import { NIVELES, NIVEL_FINAL } from './levels/index'
@@ -80,7 +80,6 @@ function empezarNivel(n: number): void {
   tiempoMs = 0
   erroresPuertas = 0
   resetInput()
-  renderer.setRows(level.rows)
   ocultarPantallas()
   hudLevel.textContent = String(n)
   hudLevel.style.background = data.color
@@ -163,8 +162,22 @@ function morir(): void {
   if (!level) return
   sonido.golpe()
   player.respawn()
-  // las plataformas caídas vuelven a su sitio para poder reintentar
+  player.limpiarPoderes()
+  // todo lo reintentable vuelve a su sitio
   level.caedizas.forEach((p) => p.reset())
+  level.items.forEach((i) => (i.recogido = false))
+  level.vigilantes.forEach((v) => (v.enfadado = false))
+  if (level.jefe) level.jefe.bolas.length = 0
+}
+
+function actualizarPoderHud(): void {
+  const hudPoder = document.getElementById('hud-power')!
+  const partes: string[] = []
+  if (player.invisibleT > 0) partes.push(`🕶️ ${Math.ceil(player.invisibleT)}`)
+  if (player.volarT > 0) partes.push(`🌈 ${Math.ceil(player.volarT)}`)
+  if (player.teleUsos > 0) partes.push('🎩 toca el destino')
+  hudPoder.textContent = partes.join('  ')
+  hudPoder.classList.toggle('hidden', partes.length === 0)
 }
 
 function update(dt: number): void {
@@ -186,10 +199,73 @@ function update(dt: number): void {
 
   player.update(dt, level)
 
+  // Ítems de poder
+  for (const item of level.items) {
+    if (item.recogido || !seSolapan(player.rect(), item.rect())) continue
+    item.recogido = true
+    sonido.checkpoint()
+    if (item.tipo === 'gafas') {
+      player.invisibleT = 8
+      avisar('🕶️ ¡Invisible 8 segundos! Los vigilantes no te ven')
+    } else if (item.tipo === 'arcoiris') {
+      player.volarT = 10
+      avisar('🌈 ¡Puedes VOLAR 10 segundos! Mantén pulsado el salto')
+    } else {
+      player.teleUsos = 1
+      avisar('🎩 ¡Sombrero mágico! Toca la pantalla para teletransportarte')
+    }
+  }
+
+  // Vigilantes: te persiguen si te ven (y no estás invisible)
+  const invisible = player.invisibleT > 0
+  for (const v of level.vigilantes) {
+    v.update(dt, level, player.rect(), invisible)
+    if (v.muerto || !seSolapan(player.rect(), v.rect())) continue
+    const piesJugador = player.y + player.h
+    if (player.vy > 100 && piesJugador < v.y + v.h * 0.7) {
+      v.muerto = true
+      v.squashT = 0.4
+      player.vy = -340
+      sonido.pisoton()
+    } else {
+      morir()
+      break
+    }
+  }
+
+  // Peces con pinchos: no se pueden pisar, solo esquivar
+  for (const pez of level.peces) {
+    pez.update(dt, level)
+    if (seSolapan(player.rect(), pez.rect())) {
+      morir()
+      break
+    }
+  }
+
+  // Tubos: tocar la boca te lleva al tubo pareja
+  if (player.tuboCooldownT <= 0) {
+    for (const tubo of level.tubos) {
+      if (!tubo.par || !seSolapan(player.rect(), tubo.rect())) continue
+      player.x = tubo.par.x + 4
+      player.y = tubo.par.y - player.h - 8
+      player.vy = 0
+      player.tuboCooldownT = 1.2
+      sonido.moneda()
+      break
+    }
+  }
+
   // Jefe final: pisotón → reto matemático → pierde un corazón
   const jefe = level.jefe
   if (jefe) {
-    jefe.update(dt, level)
+    jefe.update(dt, level, player.rect(), invisible)
+    for (const bola of jefe.bolas) {
+      if (seSolapan(player.rect(), bola.rect())) {
+        bola.viva = false
+        morir()
+        break
+      }
+    }
     if (!jefe.muerto && seSolapan(player.rect(), jefe.rect())) {
       const piesJugador = player.y + player.h
       const esPisoton = player.vy > 100 && piesJugador < jefe.y + jefe.h * 0.5
@@ -266,8 +342,27 @@ function update(dt: number): void {
 
   comprobarPuertas()
 
+  actualizarPoderHud()
+
   if (level.goal.w > 0 && seSolapan(player.rect(), level.goal)) terminarNivel()
 }
+
+// 🎩 Teletransporte: con sombrero, tocar la pantalla te lleva allí
+document.getElementById('game')!.addEventListener('pointerdown', (e) => {
+  if (estado !== 'jugando' || !level || player.teleUsos <= 0) return
+  const destino = renderer.pantallaAMundo(e.clientX, e.clientY)
+  const c = Math.max(0, Math.min(level.cols - 1, Math.floor(destino.x / TILE)))
+  // busca hueco libre subiendo desde el punto tocado (sin meterse en bloques)
+  let r = Math.max(0, Math.min(level.rows - 1, Math.floor(destino.y / TILE)))
+  let intentos = 0
+  while (intentos++ < 8 && (level.esSolido(c, r) || level.esSolido(c, r - 1))) r--
+  if (r < 1) return // no había sitio: no gasta el sombrero
+  player.teleUsos = 0
+  player.x = c * TILE + (TILE - player.w) / 2
+  player.y = r * TILE + TILE - player.h - 0.01
+  player.vy = 0
+  sonido.acierto()
+})
 
 function render(): void {
   if (estado === 'intro' && intro) intro.draw(canvasJuego)

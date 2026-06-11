@@ -161,6 +161,130 @@ export class PlataformaCaediza implements PlataformaPisable {
   }
 }
 
+export type TipoPoder = 'gafas' | 'arcoiris' | 'sombrero'
+
+/** Ítem de poder: gafas (invisible), arcoíris (volar), sombrero (teletransporte). */
+export class ItemPoder {
+  recogido = false
+  constructor(
+    public readonly tipo: TipoPoder,
+    public readonly cx: number,
+    public readonly cy: number,
+  ) {}
+
+  rect(): Rect {
+    return { x: this.cx - 12, y: this.cy - 12, w: 24, h: 24 }
+  }
+}
+
+/**
+ * Vigilante: monstruo guardián. Si te VE (y no estás invisible) carga contra
+ * ti a toda velocidad. Invisible puedes pasarle por delante… y aplastarlo.
+ */
+export class Vigilante {
+  readonly w = 30
+  readonly h = 36
+  x: number
+  y: number
+  dir: 1 | -1 = -1 // vigila hacia la izquierda (por donde llega el jugador)
+  enfadado = false
+  muerto = false
+  squashT = 0
+  private readonly velCarga = 200
+
+  constructor(col: number, fila: number) {
+    this.x = col * TILE + (TILE - this.w) / 2
+    this.y = (fila + 1) * TILE - this.h
+  }
+
+  rect(): Rect {
+    return { x: this.x, y: this.y, w: this.w, h: this.h }
+  }
+
+  /** Zona que ve: un haz de 7 tiles hacia delante. */
+  vision(): Rect {
+    const largo = 7 * TILE
+    const x = this.dir < 0 ? this.x - largo : this.x + this.w
+    return { x, y: this.y - TILE, w: largo, h: this.h + TILE * 1.5 }
+  }
+
+  update(dt: number, level: Level, jugador: Rect, invisible: boolean): void {
+    if (this.muerto) {
+      this.squashT = Math.max(0, this.squashT - dt)
+      return
+    }
+    const ve = (a: Rect, b: Rect): boolean =>
+      a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+    if (invisible) this.enfadado = false
+    else if (ve(this.vision(), jugador)) this.enfadado = true
+
+    if (!this.enfadado) return
+    // carga hacia el jugador sin tirarse por los barrancos
+    this.dir = jugador.x + jugador.w / 2 < this.x + this.w / 2 ? -1 : 1
+    const nx = this.x + this.dir * this.velCarga * dt
+    const frente = Math.floor((this.dir > 0 ? nx + this.w : nx) / TILE)
+    const filaCuerpo = Math.floor((this.y + this.h / 2) / TILE)
+    const filaSuelo = Math.floor((this.y + this.h + 2) / TILE)
+    if (!level.esSolido(frente, filaCuerpo) && level.esSolido(frente, filaSuelo)) {
+      this.x = nx
+    }
+  }
+}
+
+/** Pez con pinchos: nada en el agua, no se puede pisar. Tocarlo = respawn. */
+export class Pez {
+  readonly w = 26
+  readonly h = 16
+  x: number
+  dir: 1 | -1 = -1
+  private readonly y0: number
+  private t = 0
+  private readonly vel = 70
+
+  constructor(col: number, fila: number) {
+    this.x = col * TILE + (TILE - this.w) / 2
+    this.y0 = fila * TILE + (TILE - this.h) / 2
+  }
+
+  get y(): number {
+    return this.y0 + Math.sin(this.t * 3) * 4
+  }
+
+  rect(): Rect {
+    return { x: this.x, y: this.y, w: this.w, h: this.h }
+  }
+
+  update(dt: number, level: Level): void {
+    this.t += dt
+    const nx = this.x + this.dir * this.vel * dt
+    const frente = Math.floor((this.dir > 0 ? nx + this.w : nx) / TILE)
+    const fila = Math.floor((this.y0 + this.h / 2) / TILE)
+    // se da la vuelta si se acaba el agua o hay pared
+    if (level.esSolido(frente, fila) || !level.esAgua(frente, fila)) {
+      this.dir = this.dir === 1 ? -1 : 1
+    } else {
+      this.x = nx
+    }
+  }
+}
+
+/** Tubo estilo Mario: tocarlo te lleva a su pareja (entrada↔salida). */
+export class Tubo {
+  readonly x: number
+  readonly y: number
+  par: Tubo | null = null
+
+  constructor(col: number, fila: number) {
+    this.x = col * TILE
+    this.y = fila * TILE
+  }
+
+  /** Boca del tubo (la zona que absorbe al jugador). */
+  rect(): Rect {
+    return { x: this.x + 2, y: this.y - 6, w: TILE - 4, h: 14 }
+  }
+}
+
 export class Checkpoint {
   activado = false
   readonly x: number

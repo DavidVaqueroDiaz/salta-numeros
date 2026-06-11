@@ -62,8 +62,8 @@ for (const fichero of ficheros) {
   )
 
   // 5. Huecos del suelo: anchura máxima razonable
-  const dobleSalto = /dobleSalto:\s*true/.test(texto)
-  const maxHueco = dobleSalto ? 7 : 7 // 7 = se cruza con plataformas; aviso solo informativo
+  // con arcoíris (R, vuelo) se permiten barrancos grandes
+  const maxHueco = todo.includes('R') ? 14 : 7
   const suelo = filas[filas.length - 1]
   let inicio = -1
   for (let c = 0; c <= suelo.length; c++) {

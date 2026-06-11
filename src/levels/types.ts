@@ -7,6 +7,9 @@ export type TipoPuerta =
   | 'division'
   | 'logica'
   | 'reto' // mezcla aleatoria de multiplicación, división y lógica (nivel 10)
+  | 'logica2' // series avanzadas: ×2, descendentes, saltos grandes
+  | 'operacion' // dos pasos: (a + b) × c, a × b − c
+  | 'reto2' // mezcla difícil: ×/÷ hasta el 9, logica2 y operacion
 
 export interface DoorSpec {
   tipo: TipoPuerta

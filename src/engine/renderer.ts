@@ -2,13 +2,17 @@ import { Level, TILE } from '../game/level'
 import { Player } from '../game/player'
 import { dibujarPersonaje } from './character'
 
+/** Filas visibles en pantalla; los niveles más altos usan cámara vertical. */
+const FILAS_VISTA = 11
+
 export class Renderer {
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
   private scale = 1
-  private rows = 11
   viewW = 0
   private viewH = 0
+  private lastCamX = 0
+  private lastCamY = 0
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -17,17 +21,12 @@ export class Renderer {
     this.resize()
   }
 
-  setRows(rows: number): void {
-    this.rows = rows
-    this.resize()
-  }
-
   resize(): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     this.canvas.width = Math.round(window.innerWidth * dpr)
     this.canvas.height = Math.round(window.innerHeight * dpr)
-    // Escala para que el alto del nivel llene la pantalla
-    this.scale = this.canvas.height / (this.rows * TILE)
+    // Escala fija: siempre se ven FILAS_VISTA filas de alto
+    this.scale = this.canvas.height / (FILAS_VISTA * TILE)
     this.viewW = this.canvas.width / this.scale
     this.viewH = this.canvas.height / this.scale
   }
@@ -38,6 +37,20 @@ export class Renderer {
     return Math.max(0, Math.min(objetivo, level.widthPx - this.viewW))
   }
 
+  camY(level: Level, player: Player): number {
+    const objetivo = player.y + player.h / 2 - this.viewH / 2
+    return Math.max(0, Math.min(objetivo, level.heightPx - this.viewH))
+  }
+
+  /** Convierte un toque en pantalla a coordenadas del mundo (teletransporte). */
+  pantallaAMundo(clientX: number, clientY: number): { x: number; y: number } {
+    const dpr = this.canvas.width / window.innerWidth
+    return {
+      x: (clientX * dpr) / this.scale + this.lastCamX,
+      y: (clientY * dpr) / this.scale + this.lastCamY,
+    }
+  }
+
   draw(level: Level, player: Player): void {
     const ctx = this.ctx
     ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0)
@@ -45,24 +58,225 @@ export class Renderer {
     this.fondo(level)
 
     const cam = this.camX(level, player)
-    ctx.translate(-cam, 0)
+    const camY = this.camY(level, player)
+    this.lastCamX = cam
+    this.lastCamY = camY
+    ctx.translate(-cam, -camY)
 
-    this.tiles(level, cam)
+    this.tiles(level, cam, camY)
     this.plataformas(level)
     this.checkpointsDibujo(level)
+    this.tubosDibujo(level)
     this.puertas(level)
     this.monedasDibujo(level)
+    this.itemsDibujo(level)
     this.enemigosDibujo(level)
+    this.vigilantesDibujo(level, player)
+    this.pecesDibujo(level)
     this.jefeDibujo(level)
     this.xianaDibujo(level)
     this.meta(level)
+    this.personajeConEfectos(level, player)
+  }
+
+  private personajeConEfectos(level: Level, player: Player): void {
+    const ctx = this.ctx
+    const t = performance.now() / 1000
+    // estela arcoíris al volar
+    if (player.volarT > 0) {
+      const colores = ['#e63946', '#ffd60a', '#3a86ff']
+      for (let i = 0; i < 3; i++) {
+        ctx.globalAlpha = 0.35 - i * 0.1
+        ctx.fillStyle = colores[i]
+        ctx.beginPath()
+        ctx.arc(
+          player.x + player.w / 2 - player.mirando * (10 + i * 9),
+          player.y + player.h - 14 + Math.sin(t * 10 + i) * 4,
+          5 - i,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
+      ctx.globalAlpha = 1
+    }
+    // invisible: se ve translúcido (el jugador sí se ve a sí mismo)
+    if (player.invisibleT > 0) ctx.globalAlpha = 0.35
     dibujarPersonaje(
-      this.ctx,
+      ctx,
       level.data.numero,
       player.x + player.w / 2,
       player.y + player.h,
       player.mirando,
     )
+    ctx.globalAlpha = 1
+    // sombrero rojo puesto mientras quede teletransporte
+    if (player.teleUsos > 0) {
+      const cx = player.x + player.w / 2
+      const arriba = player.y + player.h - 46
+      ctx.fillStyle = '#c1121f'
+      ctx.beginPath()
+      ctx.roundRect(cx - 12, arriba + 4, 24, 4, 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.roundRect(cx - 7, arriba - 6, 14, 11, 3)
+      ctx.fill()
+      ctx.fillStyle = '#ffd60a'
+      ctx.fillText('✦', cx + 12 + Math.sin(t * 6) * 3, arriba - 4)
+    }
+  }
+
+  private tubosDibujo(level: Level): void {
+    const ctx = this.ctx
+    for (const tubo of level.tubos) {
+      ctx.fillStyle = '#2d9c46'
+      ctx.beginPath()
+      ctx.roundRect(tubo.x + 3, tubo.y + 8, TILE - 6, TILE * 2 - 8, 3)
+      ctx.fill()
+      // boca más ancha
+      ctx.fillStyle = '#37b653'
+      ctx.beginPath()
+      ctx.roundRect(tubo.x - 2, tubo.y, TILE + 4, 14, 4)
+      ctx.fill()
+      ctx.strokeStyle = '#1e7a33'
+      ctx.lineWidth = 2
+      ctx.stroke()
+    }
+  }
+
+  private itemsDibujo(level: Level): void {
+    const ctx = this.ctx
+    const t = performance.now() / 1000
+    for (const item of level.items) {
+      if (item.recogido) continue
+      const y = item.cy + Math.sin(t * 3 + item.cx) * 4
+      if (item.tipo === 'gafas') {
+        ctx.strokeStyle = '#e0a800'
+        ctx.fillStyle = '#ffd60a'
+        ctx.lineWidth = 2.5
+        for (const lado of [-1, 1]) {
+          ctx.beginPath()
+          ctx.arc(item.cx + lado * 7, y, 6, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.stroke()
+        }
+        ctx.beginPath()
+        ctx.moveTo(item.cx - 1, y)
+        ctx.lineTo(item.cx + 1, y)
+        ctx.stroke()
+      } else if (item.tipo === 'arcoiris') {
+        const colores = ['#e63946', '#ffd60a', '#3a86ff']
+        colores.forEach((color, i) => {
+          ctx.strokeStyle = color
+          ctx.lineWidth = 3
+          ctx.beginPath()
+          ctx.arc(item.cx, y + 6, 12 - i * 3.5, Math.PI, 2 * Math.PI)
+          ctx.stroke()
+        })
+      } else {
+        // sombrero rojo con brillos
+        ctx.fillStyle = '#c1121f'
+        ctx.beginPath()
+        ctx.roundRect(item.cx - 12, y + 4, 24, 5, 2)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.roundRect(item.cx - 7, y - 8, 14, 13, 3)
+        ctx.fill()
+        ctx.fillStyle = '#ffd60a'
+        ctx.font = '10px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText('✦', item.cx + 13, y - 4 + Math.sin(t * 5) * 2)
+        ctx.fillText('✦', item.cx - 13, y + 2 + Math.cos(t * 5) * 2)
+      }
+    }
+  }
+
+  private vigilantesDibujo(level: Level, player: Player): void {
+    const ctx = this.ctx
+    for (const v of level.vigilantes) {
+      if (v.muerto && v.squashT <= 0) continue
+      // haz de visión (se apaga si el jugador es invisible)
+      if (!v.muerto) {
+        const vis = v.vision()
+        ctx.fillStyle =
+          player.invisibleT > 0
+            ? 'rgba(141,153,174,0.12)'
+            : v.enfadado
+              ? 'rgba(230,57,70,0.22)'
+              : 'rgba(255,214,10,0.18)'
+        ctx.beginPath()
+        const ojoX = v.dir < 0 ? v.x : v.x + v.w
+        ctx.moveTo(ojoX, v.y + 8)
+        ctx.lineTo(v.dir < 0 ? vis.x : vis.x + vis.w, vis.y)
+        ctx.lineTo(v.dir < 0 ? vis.x : vis.x + vis.w, vis.y + vis.h)
+        ctx.closePath()
+        ctx.fill()
+      }
+      const aplaste = v.muerto ? Math.max(0.2, v.squashT / 0.4) : 1
+      const h = v.h * aplaste
+      const y = v.y + v.h - h
+      ctx.fillStyle = v.enfadado ? '#d00000' : '#e85d04'
+      ctx.beginPath()
+      ctx.roundRect(v.x, y, v.w, h, 8)
+      ctx.fill()
+      ctx.strokeStyle = '#9d0208'
+      ctx.lineWidth = 2
+      ctx.stroke()
+      if (!v.muerto) {
+        // un ojo enorme que vigila
+        ctx.fillStyle = '#ffffff'
+        ctx.beginPath()
+        ctx.arc(v.x + v.w / 2, y + 13, 9, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#1d3557'
+        ctx.beginPath()
+        ctx.arc(v.x + v.w / 2 + v.dir * 3.5, y + 13, 4.5, 0, Math.PI * 2)
+        ctx.fill()
+        // patitas
+        ctx.fillStyle = '#9d0208'
+        ctx.fillRect(v.x + 4, v.y + v.h - 3, 7, 3)
+        ctx.fillRect(v.x + v.w - 11, v.y + v.h - 3, 7, 3)
+      }
+    }
+  }
+
+  private pecesDibujo(level: Level): void {
+    const ctx = this.ctx
+    for (const pez of level.peces) {
+      const { x, y, w, h } = pez.rect()
+      // cuerpo
+      ctx.fillStyle = '#f3722c'
+      ctx.beginPath()
+      ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2)
+      ctx.fill()
+      // cola
+      ctx.beginPath()
+      const colaX = pez.dir > 0 ? x : x + w
+      ctx.moveTo(colaX, y + h / 2)
+      ctx.lineTo(colaX - pez.dir * 8, y)
+      ctx.lineTo(colaX - pez.dir * 8, y + h)
+      ctx.closePath()
+      ctx.fill()
+      // pinchos en el lomo
+      ctx.fillStyle = '#9d0208'
+      ctx.beginPath()
+      for (let i = 0; i < 3; i++) {
+        const sx = x + 5 + i * 6
+        ctx.moveTo(sx, y + 2)
+        ctx.lineTo(sx + 3, y - 5)
+        ctx.lineTo(sx + 6, y + 2)
+      }
+      ctx.fill()
+      // ojo
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.arc(x + w / 2 + pez.dir * 7, y + h / 2 - 2, 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#1d3557'
+      ctx.beginPath()
+      ctx.arc(x + w / 2 + pez.dir * 8, y + h / 2 - 2, 1.5, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
 
   private fondo(level: Level): void {
@@ -92,12 +306,14 @@ export class Renderer {
     }
   }
 
-  private tiles(level: Level, cam: number): void {
+  private tiles(level: Level, cam: number, camY: number): void {
     const ctx = this.ctx
     const c0 = Math.max(0, Math.floor(cam / TILE))
     const c1 = Math.min(level.cols - 1, Math.ceil((cam + this.viewW) / TILE))
+    const r0 = Math.max(0, Math.floor(camY / TILE))
+    const r1 = Math.min(level.rows - 1, Math.ceil((camY + this.viewH) / TILE))
 
-    for (let r = 0; r < level.rows; r++) {
+    for (let r = r0; r <= r1; r++) {
       for (let c = c0; c <= c1; c++) {
         const t = level.tileAt(c, r)
         const x = c * TILE
@@ -129,6 +345,15 @@ export class Renderer {
             ctx.lineTo(sx + 8, y + TILE)
           }
           ctx.fill()
+        } else if (t === 3) {
+          // Agua
+          ctx.fillStyle = 'rgba(64,160,255,0.55)'
+          ctx.fillRect(x, y, TILE, TILE)
+          if (!level.esAgua(c, r - 1)) {
+            // superficie con olitas
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'
+            ctx.fillRect(x, y, TILE, 3)
+          }
         }
       }
     }
@@ -235,6 +460,17 @@ export class Renderer {
     const j = level.jefe
     if (!j) return
     const ctx = this.ctx
+    // bolas de fuego
+    for (const b of j.bolas) {
+      ctx.fillStyle = '#f3722c'
+      ctx.beginPath()
+      ctx.arc(b.x, b.y, 9, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#ffd60a'
+      ctx.beginPath()
+      ctx.arc(b.x - b.vx * 0.01, b.y - b.vy * 0.01, 4.5, 0, Math.PI * 2)
+      ctx.fill()
+    }
     if (j.muerto && j.squashT <= 0) return
     const aplaste = j.muerto ? Math.max(0.15, j.squashT / 0.6) : 1
     const h = j.h * aplaste
