@@ -16,20 +16,28 @@ import {
   ocultarPantallas,
 } from './ui/screens'
 import { guardarResultado } from './storage/progress'
+import { Intro } from './ui/intro'
 
 registerSW({ immediate: true })
 
-type Estado = 'menu' | 'jugando' | 'puerta' | 'resultados'
+type Estado = 'intro' | 'menu' | 'jugando' | 'puerta' | 'resultados'
 
-let estado: Estado = 'menu'
+let estado: Estado = 'intro'
+let intro: Intro | null = new Intro()
 let level: Level | null = null
 let nivelActual = 1
 let tiempoMs = 0
 let erroresPuertas = 0
 const player = new Player()
 
-const renderer = new Renderer(document.getElementById('game') as HTMLCanvasElement)
+const canvasJuego = document.getElementById('game') as HTMLCanvasElement
+const renderer = new Renderer(canvasJuego)
 setupInput()
+
+// La intro se salta tocando en cualquier parte
+window.addEventListener('pointerdown', () => {
+  if (estado === 'intro' && intro) intro.terminado = true
+})
 
 const hud = document.getElementById('hud')!
 const hudLevel = document.getElementById('hud-level')!
@@ -156,6 +164,14 @@ function morir(): void {
 }
 
 function update(dt: number): void {
+  if (estado === 'intro' && intro) {
+    intro.update(dt)
+    if (intro.terminado) {
+      intro = null
+      irAlMenu()
+    }
+    return
+  }
   if (estado !== 'jugando' || !level) return
   tiempoMs += dt * 1000
   hudTimer.textContent = formatearTiempo(tiempoMs)
@@ -208,11 +224,12 @@ function update(dt: number): void {
 }
 
 function render(): void {
-  if (level) renderer.draw(level, player)
+  if (estado === 'intro' && intro) intro.draw(canvasJuego)
+  else if (level) renderer.draw(level, player)
 }
 
 startLoop(update, render)
-irAlMenu()
+ocultarPantallas() // la intro arranca a pantalla limpia; al acabar va al menú
 
 // Gancho de depuración solo en desarrollo (npm run dev)
 if (import.meta.env.DEV) {

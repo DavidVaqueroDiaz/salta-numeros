@@ -40,6 +40,20 @@ hacer `npm run build` y después `build-exe.ps1`.
   ~10 MB). Embebe `dist` como zip, lo sirve en `http://localhost:38754+`
   y abre el navegador. Flag `--sin-navegador` para pruebas.
 
+## Personajes e intro (2026-06-11, tarde)
+
+- `src/engine/character.ts`: personajes rediseñados al estilo Numberblocks
+  (versión original propia) con un rasgo por número: 1 un ojo, 2 normal,
+  3 bolitas, 4 ojos cuadrados, 5 pestañas, 6 añil con puntos de dado,
+  7 bloques arcoíris con mechón, 8 cejas, 9 gris con ojazos, 10 blanco con
+  gafas rojas. Juntas entre bloques, bracitos y piernas. `dibujarPersonaje`
+  acepta `bsFijo` para dibujarlos a cualquier tamaño (lo usa la intro).
+- `src/ui/intro.ts`: cinemática de inicio (~13,5 s, se salta tocando):
+  "Juego creado por David Vaquero" → "Para Joel Vaquero ❤" → cubo de Rubik
+  girando (falsa perspectiva con pegatinas 3×3) → estalla en cubitos que
+  vuelan y se convierten en los 10 personajes en fila → título.
+- Colores de nivel actualizados: 6 añil `#3f37c9`, 9 gris `#8d99ae`.
+
 ## Mecánicas del personaje y del mundo (fase 2)
 
 - Coyote time (en tiempo de juego, no de reloj) + jump buffer + salto variable.

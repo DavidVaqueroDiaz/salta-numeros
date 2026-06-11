@@ -17,11 +17,11 @@ export const COLORES: Record<number, string> = {
   3: '#ffd60a', // amarillo
   4: '#52b788', // verde
   5: '#4cc9f0', // azul claro
-  6: '#9d4edd', // morado
-  7: '#3a86ff', // azul
+  6: '#3f37c9', // añil (con puntos de dado)
+  7: '#3a86ff', // azul (cuerpo arcoíris)
   8: '#ff5d8f', // rosa
-  9: '#2a9d8f', // verde azulado
-  10: '#adb5bd', // plateado
+  9: '#8d99ae', // gris
+  10: '#adb5bd', // plateado (cuerpo blanco con borde rojo)
 }
 
 export const TOTAL_NIVELES = 10
