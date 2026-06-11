@@ -1,4 +1,12 @@
 import type { DoorSpec, LevelData } from '../levels/types'
+import {
+  Checkpoint,
+  Enemigo,
+  Moneda,
+  PlataformaCaediza,
+  PlataformaMovil,
+  type PlataformaPisable,
+} from './entities'
 
 export const TILE = 32
 
@@ -33,6 +41,11 @@ export class Level {
   readonly spawn = { x: TILE, y: TILE }
   readonly goal: Rect = { x: 0, y: 0, w: TILE, h: TILE * 2 }
   readonly data: LevelData
+  readonly monedas: Moneda[] = []
+  readonly enemigos: Enemigo[] = []
+  readonly moviles: PlataformaMovil[] = []
+  readonly caedizas: PlataformaCaediza[] = []
+  readonly checkpoints: Checkpoint[] = []
 
   constructor(data: LevelData) {
     this.data = data
@@ -58,6 +71,18 @@ export class Level {
           this.goal.h = TILE * 2
         } else if (ch === 'D') {
           this.addDoorTile(c, r, data.puertas)
+        } else if (ch === 'o') {
+          this.monedas.push(new Moneda(c * TILE + TILE / 2, r * TILE + TILE / 2))
+        } else if (ch === 'E') {
+          this.enemigos.push(new Enemigo(c, r))
+        } else if (ch === 'm') {
+          this.moviles.push(new PlataformaMovil(c, r, true))
+        } else if (ch === 'w') {
+          this.moviles.push(new PlataformaMovil(c, r, false))
+        } else if (ch === 'F') {
+          this.caedizas.push(new PlataformaCaediza(c, r, this.rows * TILE))
+        } else if (ch === 'C') {
+          this.checkpoints.push(new Checkpoint(c, r))
         }
       }
     }
@@ -101,6 +126,11 @@ export class Level {
 
   esPincho(c: number, r: number): boolean {
     return this.tileAt(c, r) === PINCHO
+  }
+
+  /** Todo lo pisable desde arriba (móviles + caedizas). */
+  get pisables(): PlataformaPisable[] {
+    return [...this.moviles, ...this.caedizas]
   }
 }
 

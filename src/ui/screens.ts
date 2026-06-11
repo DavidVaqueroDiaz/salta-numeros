@@ -57,6 +57,8 @@ export interface DatosResultado {
   estrellas: number
   mejorMs: number
   esNuevoRecord: boolean
+  monedas: number
+  totalMonedas: number
 }
 
 /** Pantalla de fin de nivel: estrellas, tiempo, récord y botones. */
@@ -91,6 +93,11 @@ export function mostrarResultados(
     ? '🎉 ¡Nuevo récord!'
     : `Mejor tiempo: ${formatearTiempo(datos.mejorMs)}`
 
+  const monedas = document.createElement('p')
+  monedas.className = 'resultado-tiempo'
+  monedas.textContent =
+    datos.totalMonedas > 0 ? `Monedas: ${datos.monedas} / ${datos.totalMonedas}` : ''
+
   const fila = document.createElement('div')
   fila.className = 'fila-botones'
   const btnRepetir = document.createElement('button')
@@ -103,7 +110,7 @@ export function mostrarResultados(
   btnMenu.addEventListener('click', alMenu)
   fila.append(btnRepetir, btnMenu)
 
-  caja.append(titulo, estrellas, tiempo, record, fila)
+  caja.append(titulo, estrellas, tiempo, monedas, record, fila)
   pantalla.appendChild(caja)
   pantalla.classList.remove('hidden')
 }

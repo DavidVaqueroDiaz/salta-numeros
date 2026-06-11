@@ -1,5 +1,14 @@
 import type { LevelData } from './types'
 import { nivel1 } from './nivel01'
+import { nivel2 } from './nivel02'
+import { nivel3 } from './nivel03'
+import { nivel4 } from './nivel04'
+import { nivel5 } from './nivel05'
+import { nivel6 } from './nivel06'
+import { nivel7 } from './nivel07'
+import { nivel8 } from './nivel08'
+import { nivel9 } from './nivel09'
+import { nivel10 } from './nivel10'
 
 /** Colores oficiales estilo Numberblocks, del 1 al 10. */
 export const COLORES: Record<number, string> = {
@@ -17,7 +26,15 @@ export const COLORES: Record<number, string> = {
 
 export const TOTAL_NIVELES = 10
 
-/** Niveles disponibles. Se irán añadiendo del 2 al 10. */
 export const NIVELES: Record<number, LevelData> = {
   1: nivel1,
+  2: nivel2,
+  3: nivel3,
+  4: nivel4,
+  5: nivel5,
+  6: nivel6,
+  7: nivel7,
+  8: nivel8,
+  9: nivel9,
+  10: nivel10,
 }

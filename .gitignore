@@ -2,3 +2,9 @@ node_modules/
 dist/
 dev-dist/
 *.local
+tools/launcher/bin/
+tools/launcher/obj/
+tools/launcher/publish/
+tools/launcher/webroot.zip
+tools/launcher/app.ico
+Salta Numeros.exe

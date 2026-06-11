@@ -4,6 +4,8 @@ export interface LevelProgress {
   stars: number
   bestMs: number
   completed: boolean
+  /** mejor cantidad de monedas conseguida */
+  coins?: number
 }
 
 export type Progress = Record<number, LevelProgress>
@@ -29,6 +31,7 @@ export function guardarResultado(
   nivel: number,
   tiempoMs: number,
   estrellas: number,
+  monedas = 0,
 ): ResultadoGuardado {
   const progreso = cargarProgreso()
   const previo = progreso[nivel]
@@ -37,6 +40,7 @@ export function guardarResultado(
     completed: true,
     stars: Math.max(estrellas, previo?.stars ?? 0),
     bestMs: esNuevoRecord ? tiempoMs : previo.bestMs,
+    coins: Math.max(monedas, previo?.coins ?? 0),
   }
   try {
     localStorage.setItem(CLAVE, JSON.stringify(progreso))

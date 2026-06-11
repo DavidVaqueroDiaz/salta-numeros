@@ -6,6 +6,7 @@ export type TipoPuerta =
   | 'multiplicacion'
   | 'division'
   | 'logica'
+  | 'reto' // mezcla aleatoria de multiplicación, división y lógica (nivel 10)
 
 export interface DoorSpec {
   tipo: TipoPuerta
@@ -22,9 +23,16 @@ export interface LevelData {
    *   . o espacio = vacío      # = bloque sólido
    *   D = puerta matemática    M = meta
    *   P = aparición jugador    ^ = pinchos
+   *   o = moneda               E = enemigo que patrulla
+   *   m = plataforma móvil horizontal   w = móvil vertical
+   *   F = plataforma que se cae         C = punto de control
    */
   mapa: string[]
   puertas: DoorSpec
   /** tiempo (ms) por debajo del cual se gana la estrella de rapidez */
   parMs: number
+  /** true a partir del nivel 7: permite doble salto */
+  dobleSalto?: boolean
+  /** texto breve que se muestra al empezar el nivel */
+  aviso?: string
 }

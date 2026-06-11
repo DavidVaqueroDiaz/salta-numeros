@@ -50,4 +50,16 @@ export const sonido = {
   golpe(): void {
     nota(120, 0.2, 0, 'sawtooth', 0.08)
   },
+  moneda(): void {
+    nota(988, 0.08, 0, 'triangle', 0.1)
+    nota(1319, 0.12, 0.06, 'triangle', 0.1)
+  },
+  pisoton(): void {
+    nota(220, 0.08, 0, 'square', 0.1)
+    nota(110, 0.12, 0.06, 'square', 0.08)
+  },
+  checkpoint(): void {
+    nota(659, 0.1, 0, 'triangle', 0.1)
+    nota(880, 0.16, 0.09, 'triangle', 0.1)
+  },
 }

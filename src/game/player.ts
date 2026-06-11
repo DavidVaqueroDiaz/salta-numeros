@@ -1,5 +1,6 @@
 import { consumeJump, input } from '../engine/input'
 import { Level, TILE, type Rect } from './level'
+import type { PlataformaPisable } from './entities'
 import { sonido } from './sound'
 
 const VELOCIDAD = 150 // px/s en horizontal
@@ -16,13 +17,33 @@ export class Player {
   vy = 0
   mirando: 1 | -1 = 1
   enSuelo = false
-  private ultimoSueloAt = 0
+  /** 1 = salto normal, 2 = doble salto (niveles avanzados) */
+  maxSaltos = 1
+  private saltosUsados = 0
+  /** segundos (de juego) desde la última vez que pisó algo */
+  private aireT = 99
+  private plataforma: PlataformaPisable | null = null
+  private puntoRespawn = { x: 0, y: 0 }
 
-  respawn(level: Level): void {
-    this.x = level.spawn.x
-    this.y = level.spawn.y
+  /** Coloca al jugador al inicio del nivel y fija ahí el respawn. */
+  empezar(level: Level): void {
+    this.puntoRespawn = { x: level.spawn.x, y: level.spawn.y }
+    this.respawn()
+  }
+
+  /** Mueve el respawn (al tocar un punto de control). */
+  fijarRespawn(x: number, y: number): void {
+    this.puntoRespawn = { x, y }
+  }
+
+  respawn(): void {
+    this.x = this.puntoRespawn.x
+    this.y = this.puntoRespawn.y
     this.vy = 0
     this.enSuelo = false
+    this.saltosUsados = 0
+    this.plataforma = null
+    this.aireT = 99
   }
 
   rect(): Rect {
@@ -30,6 +51,24 @@ export class Player {
   }
 
   update(dt: number, level: Level): void {
+    // --- Arrastre de la plataforma sobre la que está subido ---
+    if (this.plataforma) {
+      const p = this.plataforma
+      const sigueEncima =
+        p.activa() &&
+        this.x + this.w > p.x &&
+        this.x < p.x + p.w &&
+        Math.abs(this.y + this.h - p.y) < 12
+      if (sigueEncima) {
+        this.x += p.dxUlt
+        if (p.dyUlt !== 0) this.y = p.y - this.h - 0.01
+      } else {
+        this.plataforma = null
+      }
+    }
+    this.aireT += dt
+    if (this.enSuelo || this.plataforma) this.aireT = 0
+
     // --- Movimiento horizontal ---
     let dir = 0
     if (input.left) dir -= 1
@@ -39,25 +78,48 @@ export class Player {
     this.x += dir * VELOCIDAD * dt
     this.resolverHorizontal(level, dir)
 
-    // --- Salto (con buffer + coyote time, para que sea amable con un niño) ---
-    const puedeSaltar =
-      this.enSuelo || performance.now() - this.ultimoSueloAt < COYOTE_MS
-    if (puedeSaltar && consumeJump()) {
+    // --- Salto: buffer + coyote + doble salto si el nivel lo permite ---
+    const sobreAlgo = this.enSuelo || this.plataforma !== null
+    const conCoyote = sobreAlgo || this.aireT < COYOTE_MS / 1000
+    const dobleDisponible = this.maxSaltos > 1 && this.saltosUsados < this.maxSaltos
+    if ((conCoyote || dobleDisponible) && consumeJump()) {
       this.vy = -VEL_SALTO
       this.enSuelo = false
+      this.plataforma = null
+      // En el aire, el salto extra siempre cuenta como el último disponible
+      this.saltosUsados = conCoyote ? 1 : Math.max(this.saltosUsados + 1, this.maxSaltos)
       sonido.salto()
     }
     // Salto variable: si suelta el botón mientras sube, corta el impulso
     if (!input.jumpHeld && this.vy < -200) this.vy = -200
 
     // --- Gravedad y movimiento vertical ---
+    const pies0 = this.y + this.h
     this.vy = Math.min(this.vy + GRAVEDAD * dt, CAIDA_MAX)
     this.y += this.vy * dt
     this.resolverVertical(level)
+
+    // --- Aterrizar sobre plataformas (solo cayendo y desde arriba) ---
+    if (this.vy >= 0 && !this.enSuelo) {
+      for (const p of level.pisables) {
+        if (!p.activa()) continue
+        const pies1 = this.y + this.h
+        const solapaX = this.x + this.w > p.x + 2 && this.x < p.x + p.w - 2
+        if (solapaX && pies0 <= p.y + 6 && pies1 >= p.y) {
+          this.y = p.y - this.h - 0.01
+          this.vy = 0
+          this.enSuelo = true
+          this.saltosUsados = 0
+          this.plataforma = p
+          this.aireT = 0
+          p.alPisar?.()
+          break
+        }
+      }
+    }
   }
 
-  private celdas(eje: 'x' | 'y'): { c0: number; c1: number; r0: number; r1: number } {
-    void eje
+  private celdas(): { c0: number; c1: number; r0: number; r1: number } {
     return {
       c0: Math.floor(this.x / TILE),
       c1: Math.floor((this.x + this.w - 0.01) / TILE),
@@ -68,7 +130,7 @@ export class Player {
 
   private resolverHorizontal(level: Level, dir: number): void {
     if (dir === 0) return
-    const { c0, c1, r0, r1 } = this.celdas('x')
+    const { c0, c1, r0, r1 } = this.celdas()
     for (let r = r0; r <= r1; r++) {
       if (dir > 0 && level.esSolido(c1, r)) {
         this.x = c1 * TILE - this.w - 0.01
@@ -79,14 +141,16 @@ export class Player {
   }
 
   private resolverVertical(level: Level): void {
-    const { c0, c1, r0, r1 } = this.celdas('y')
+    const { c0, c1, r0, r1 } = this.celdas()
     this.enSuelo = false
     for (let c = c0; c <= c1; c++) {
       if (this.vy >= 0 && level.esSolido(c, r1)) {
         this.y = r1 * TILE - this.h - 0.01
         this.vy = 0
         this.enSuelo = true
-        this.ultimoSueloAt = performance.now()
+        this.saltosUsados = 0
+        this.plataforma = null
+        this.aireT = 0
       } else if (this.vy < 0 && level.esSolido(c, r0)) {
         this.y = (r0 + 1) * TILE + 0.01
         this.vy = 0

@@ -18,13 +18,18 @@ function barajar<T>(arr: T[]): T[] {
   return a
 }
 
-/** Monta la pregunta con la respuesta correcta y 2 distractores cercanos. */
-function conDistractores(texto: string, correcto: number): Pregunta {
+/**
+ * Monta la pregunta con la respuesta correcta y 2 distractores cercanos.
+ * `techo` acota los distractores al rango del nivel (p. ej. sumas hasta 5).
+ */
+function conDistractores(texto: string, correcto: number, techo?: number): Pregunta {
   const opciones = new Set<number>([correcto])
   while (opciones.size < 3) {
     const desvio = azar(1, 3) * (Math.random() < 0.5 ? -1 : 1)
     const candidato = correcto + desvio
-    if (candidato >= 0) opciones.add(candidato)
+    if (candidato >= 0 && (techo === undefined || candidato <= techo)) {
+      opciones.add(candidato)
+    }
   }
   const lista = barajar([...opciones]).map(String)
   return { texto, opciones: lista, correcta: lista.indexOf(String(correcto)) }
@@ -35,12 +40,12 @@ export function generarPregunta(spec: DoorSpec): Pregunta {
     case 'suma': {
       const a = azar(1, spec.max - 1)
       const b = azar(1, spec.max - a)
-      return conDistractores(`${a} + ${b} = ?`, a + b)
+      return conDistractores(`${a} + ${b} = ?`, a + b, spec.max)
     }
     case 'resta': {
       const a = azar(2, spec.max)
       const b = azar(1, a - 1)
-      return conDistractores(`${a} − ${b} = ?`, a - b)
+      return conDistractores(`${a} − ${b} = ?`, a - b, spec.max)
     }
     case 'mixta':
       return generarPregunta({
@@ -73,6 +78,13 @@ export function generarPregunta(spec: DoorSpec): Pregunta {
       const b = azar(2, Math.min(5, spec.max))
       const c = azar(2, Math.min(5, spec.max))
       return conDistractores(`${b * c} ÷ ${b} = ?`, c)
+    }
+    case 'reto': {
+      const tipos = ['multiplicacion', 'division', 'logica'] as const
+      return generarPregunta({
+        tipo: tipos[Math.floor(Math.random() * tipos.length)],
+        max: spec.max,
+      })
     }
     case 'logica': {
       // Serie: continúa la secuencia (saltos de 2 o 3)

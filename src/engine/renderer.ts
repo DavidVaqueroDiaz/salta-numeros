@@ -72,9 +72,109 @@ export class Renderer {
     ctx.translate(-cam, 0)
 
     this.tiles(level, cam)
+    this.plataformas(level)
+    this.checkpointsDibujo(level)
     this.puertas(level)
+    this.monedasDibujo(level)
+    this.enemigosDibujo(level)
     this.meta(level)
     this.personaje(player, level.data.numero, level.data.color)
+  }
+
+  private plataformas(level: Level): void {
+    const ctx = this.ctx
+    for (const p of level.moviles) {
+      ctx.fillStyle = '#67c26b'
+      ctx.beginPath()
+      ctx.roundRect(p.x, p.y, p.w, p.h, 6)
+      ctx.fill()
+      ctx.strokeStyle = '#3f8f4a'
+      ctx.lineWidth = 2.5
+      ctx.stroke()
+    }
+    for (const p of level.caedizas) {
+      if (!p.activa()) continue
+      const sacudida = p.estado === 'temblando' ? Math.sin(p.temblor * 45) * 2 : 0
+      ctx.fillStyle = '#c99c63'
+      ctx.beginPath()
+      ctx.roundRect(p.x + sacudida, p.y, p.w, p.h, 4)
+      ctx.fill()
+      ctx.strokeStyle = '#8a5a33'
+      ctx.lineWidth = 2
+      ctx.stroke()
+      // vetas de madera
+      ctx.fillStyle = '#8a5a33'
+      ctx.fillRect(p.x + sacudida + 7, p.y + 4, 6, 3)
+      ctx.fillRect(p.x + sacudida + 19, p.y + 5, 6, 3)
+    }
+  }
+
+  private checkpointsDibujo(level: Level): void {
+    const ctx = this.ctx
+    for (const c of level.checkpoints) {
+      const baseY = c.y + TILE
+      ctx.fillStyle = '#8d99ae'
+      ctx.fillRect(c.x + 13, baseY - TILE * 1.6, 5, TILE * 1.6)
+      ctx.fillStyle = c.activado ? '#52b788' : '#cdd5df'
+      ctx.beginPath()
+      ctx.arc(c.x + 16, baseY - TILE * 1.6, 9, 0, Math.PI * 2)
+      ctx.fill()
+      if (c.activado) {
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 11px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('✓', c.x + 16, baseY - TILE * 1.6 + 1)
+      }
+    }
+  }
+
+  private monedasDibujo(level: Level): void {
+    const ctx = this.ctx
+    const t = performance.now() / 1000
+    for (const m of level.monedas) {
+      if (m.recogida) continue
+      // gira: la anchura oscila como si rotara sobre su eje
+      const giro = Math.abs(Math.sin(t * 3 + m.cx * 0.05))
+      ctx.fillStyle = '#ffd60a'
+      ctx.beginPath()
+      ctx.ellipse(m.cx, m.cy, 4 + 6 * giro, 10, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = '#e0a800'
+      ctx.lineWidth = 2
+      ctx.stroke()
+    }
+  }
+
+  private enemigosDibujo(level: Level): void {
+    const ctx = this.ctx
+    for (const e of level.enemigos) {
+      if (e.muerto && e.squashT <= 0) continue
+      const aplaste = e.muerto ? Math.max(0.2, e.squashT / 0.4) : 1
+      const h = e.h * aplaste
+      const y = e.y + e.h - h
+      ctx.fillStyle = '#5e548e'
+      ctx.beginPath()
+      ctx.roundRect(e.x, y, e.w, h, 8)
+      ctx.fill()
+      if (!e.muerto) {
+        // ojos mirando hacia donde camina
+        for (const lado of [-1, 1]) {
+          ctx.fillStyle = '#ffffff'
+          ctx.beginPath()
+          ctx.arc(e.x + e.w / 2 + lado * 6, y + 7, 4, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.fillStyle = '#1d3557'
+          ctx.beginPath()
+          ctx.arc(e.x + e.w / 2 + lado * 6 + e.dir * 1.5, y + 7, 2, 0, Math.PI * 2)
+          ctx.fill()
+        }
+        // patitas
+        ctx.fillStyle = '#3c355c'
+        ctx.fillRect(e.x + 4, e.y + e.h - 3, 6, 3)
+        ctx.fillRect(e.x + e.w - 10, e.y + e.h - 3, 6, 3)
+      }
+    }
   }
 
   private fondo(level: Level): void {

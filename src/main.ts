@@ -34,8 +34,25 @@ setupInput()
 const hud = document.getElementById('hud')!
 const hudLevel = document.getElementById('hud-level')!
 const hudTimer = document.getElementById('hud-timer')!
+const hudCoins = document.getElementById('hud-coins')!
 const controles = document.getElementById('controls')!
 document.getElementById('hud-exit')!.addEventListener('click', irAlMenu)
+
+function actualizarMonedasHud(): void {
+  if (!level) return
+  const recogidas = level.monedas.filter((m) => m.recogida).length
+  hudCoins.textContent = `● ${recogidas}/${level.monedas.length}`
+  hudCoins.classList.toggle('hidden', level.monedas.length === 0)
+}
+
+let toastTimer = 0
+function avisar(texto: string): void {
+  const toast = document.getElementById('toast')!
+  toast.textContent = texto
+  toast.classList.remove('hidden')
+  clearTimeout(toastTimer)
+  toastTimer = window.setTimeout(() => toast.classList.add('hidden'), 3500)
+}
 
 function irAlMenu(): void {
   estado = 'menu'
@@ -51,7 +68,8 @@ function empezarNivel(n: number): void {
   if (!data) return
   nivelActual = n
   level = new Level(data)
-  player.respawn(level)
+  player.empezar(level)
+  player.maxSaltos = data.dobleSalto ? 2 : 1
   tiempoMs = 0
   erroresPuertas = 0
   resetInput()
@@ -61,6 +79,8 @@ function empezarNivel(n: number): void {
   hudLevel.style.background = data.color
   hud.classList.remove('hidden')
   controles.classList.remove('hidden')
+  actualizarMonedasHud()
+  if (data.aviso) avisar(data.aviso)
   estado = 'jugando'
 }
 
@@ -104,7 +124,13 @@ function terminarNivel(): void {
   // 1 estrella por completar, +1 sin fallos en las puertas, +1 por rapidez
   const estrellas =
     1 + (erroresPuertas === 0 ? 1 : 0) + (ms <= level.data.parMs ? 1 : 0)
-  const { progreso, esNuevoRecord } = guardarResultado(nivelActual, ms, estrellas)
+  const monedas = level.monedas.filter((m) => m.recogida).length
+  const { progreso, esNuevoRecord } = guardarResultado(
+    nivelActual,
+    ms,
+    estrellas,
+    monedas,
+  )
   controles.classList.add('hidden')
   mostrarResultados(
     {
@@ -113,10 +139,20 @@ function terminarNivel(): void {
       estrellas,
       mejorMs: progreso[nivelActual].bestMs,
       esNuevoRecord,
+      monedas,
+      totalMonedas: level.monedas.length,
     },
     () => empezarNivel(nivelActual),
     irAlMenu,
   )
+}
+
+function morir(): void {
+  if (!level) return
+  sonido.golpe()
+  player.respawn()
+  // las plataformas caídas vuelven a su sitio para poder reintentar
+  level.caedizas.forEach((p) => p.reset())
 }
 
 function update(dt: number): void {
@@ -124,11 +160,46 @@ function update(dt: number): void {
   tiempoMs += dt * 1000
   hudTimer.textContent = formatearTiempo(tiempoMs)
 
+  level.moviles.forEach((p) => p.update(dt))
+  level.caedizas.forEach((p) => p.update(dt))
+  level.enemigos.forEach((e) => e.update(dt, level!))
+
   player.update(dt, level)
 
-  if (player.haMuerto(level)) {
-    sonido.golpe()
-    player.respawn(level)
+  // Enemigos: saltar encima los aplasta; chocar de lado manda al respawn
+  for (const e of level.enemigos) {
+    if (e.muerto || !seSolapan(player.rect(), e.rect())) continue
+    const piesJugador = player.y + player.h
+    if (player.vy > 100 && piesJugador < e.y + e.h * 0.7) {
+      e.muerto = true
+      e.squashT = 0.4
+      player.vy = -340 // rebote
+      sonido.pisoton()
+    } else {
+      morir()
+      break
+    }
+  }
+
+  if (player.haMuerto(level)) morir()
+
+  // Monedas
+  for (const m of level.monedas) {
+    if (!m.recogida && seSolapan(player.rect(), m.rect())) {
+      m.recogida = true
+      sonido.moneda()
+      actualizarMonedasHud()
+    }
+  }
+
+  // Puntos de control
+  for (const c of level.checkpoints) {
+    if (!c.activado && seSolapan(player.rect(), c.rect())) {
+      c.activado = true
+      player.fijarRespawn(c.x + 4, c.y)
+      sonido.checkpoint()
+      avisar('🚩 ¡Punto de control!')
+    }
   }
 
   comprobarPuertas()
@@ -160,6 +231,11 @@ if (import.meta.env.DEV) {
       player.x = x
       player.y = y
       player.vy = 0
+    },
+    /** Avanza el juego a mano (para probar aunque la pestaña esté oculta). */
+    step(frames = 1, dt = 1 / 60) {
+      for (let i = 0; i < frames; i++) update(dt)
+      render()
     },
   }
 }
