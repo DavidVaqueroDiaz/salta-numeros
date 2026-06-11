@@ -161,18 +161,60 @@ hacer `npm run build` y después `build-exe.ps1`.
       y 200 preguntas generadas sin fallos.
 - [ ] **Fase 3** — Despliegue HTTPS para la tablet (GitHub Pages o Netlify).
 
-## Ideas propuestas pendientes de decidir (2026-06-11)
+## ⏸️ EN CURSO — retomar aquí (sesión 2026-06-11, pausada por Vaquero)
 
-1. Hosting HTTPS + instalación PWA en la tablet de Joel (lo único del
-   encargo original que falta).
-2. Cinemática de cierre al salvar a Xiana + contador total de estrellas
-   y monedas en el menú con premio al 100 %.
-3. Pistas visuales estilo Numberblocks en las puertas: al fallar, dibujar
-   la operación con bloquecitos de colores.
-4. Música chiptune de fondo (con interruptor en Ajustes), squash & stretch
-   del personaje, parpadeo de ojos, vibración háptica y botón de pausa.
-5. Tienda de complementos (gorras, coronas, capas) comprables con monedas.
-6. Informe para papá en Ajustes: % de aciertos por tipo de operación.
+Decisiones tomadas con Vaquero antes de pausar:
+- **PC primero**: nada de hosting/tablet por ahora; el exe es la plataforma.
+- **Tienda de personajes**: se juega SIEMPRE con el Numberblock 1; los
+  personajes 2-25 se compran con monedas (precio orientativo: nº × 5).
+  Las monedas de cada nivel completado se suman a una hucha persistente.
+- **10 niveles nuevos (26-35) con mecánicas nuevas**, jefe pasa al 36:
+  26-28 hielo resbaladizo ('I'), 29-31 gravedad lunar (`gravedadBaja`),
+  32-35 castillo con lava mortal ('L') y plataformas parpadeantes ('b').
+- **Temas visuales por mundos** (campo `tema` en LevelData): 1-5 pradera,
+  6-10 bosque, 11-15 cueva, 16-20 volcán, 21-28 nieve, 29-31 espacio,
+  32-36 castillo. Cada tema = cielo + suelo + detalles propios.
+- **Xiana rediseñada** estilo dibujo animado (ojazos con brillo, flequillo,
+  coletas con gomas, mofletes, vestido con vuelo) — la actual no le gusta.
+
+YA HECHO (commiteado, compila):
+- `types.ts`: TipoPuerta + `mitadDoble` y `reto3`; tipo `Tema`; campos
+  `tema` y `gravedadBaja` en LevelData; leyenda de mapa con I/L/b.
+- `questions.ts`: generadores de `mitadDoble` (dobles y mitades) y `reto3`
+  (×/÷ hasta 12 + mitadDoble + operacion + logica2).
+
+PENDIENTE (en orden previsto):
+1. `entities.ts`: clase PlataformaParpadeante (ciclo ~2,8 s, aviso parpadeo).
+2. `level.ts`: tiles HIELO=4 y LAVA=5; parsear 'I', 'L', 'b'; esSolido
+   incluye hielo; esLetal (pincho o lava); array parpadeantes en pisables.
+3. `player.ts`: física de hielo (vx con inercia cuando pisa hielo),
+   gravedad lunar (`level.data.gravedadBaja` → gravedad ×0,45), morir
+   con esLetal en vez de solo esPincho.
+4. `src/storage/shop.ts`: hucha (cargar/añadir/gastar) + personajes
+   (comprados[], equipado; por defecto [1], 1).
+5. `screens.ts`: pantalla Tienda (rejilla con mini-canvas de cada personaje
+   vía dibujarPersonaje, precio/Elegir/✔ Puesto), hucha visible en menú,
+   botón 🛍️ Tienda.
+6. `renderer.ts`: TEMAS (fondo y paleta de tiles por tema: estrellas,
+   copos, ascuas, estalactitas, siluetas…), dibujo de hielo/lava/
+   parpadeantes, parámetro numeroPersonaje en draw() (el equipado, ya no
+   level.data.numero), y reescritura bonita de xianaDibujo.
+7. `main.ts`: personaje equipado, sumar monedas a la hucha en
+   terminarNivel, refrescar tras cerrar tienda.
+8. `gen-levels.mjs`: añadir `tema` a 11-25 y generar 26-35 nuevos;
+   `nivel06-10` añadir tema a mano; nivelfinal tema castillo y clave 36;
+   `index.ts` TOTAL_NIVELES=35, NIVEL_FINAL=36; CSS rejilla 7 columnas.
+9. `check-levels.mjs`: suelo válido = '#' o 'I' (L es letal, no asienta
+   entidades); hueco máximo mayor si `gravedadBaja`.
+10. Verificar con __debug.step, build, exe, PROGRESO, commit.
+
+## Ideas en la nevera (decididas NO ahora)
+
+- Cinemática de cierre + contador total de estrellas con premio al 100 %.
+- Pistas visuales con bloquecitos al fallar una puerta.
+- Música chiptune + squash & stretch + vibración + botón pausa.
+- Informe para papá: % de aciertos por tipo de operación.
+- Hosting HTTPS/tablet: solo si a Joel le gusta el juego.
 
 ## Notas técnicas
 

@@ -118,6 +118,21 @@ export function generarPregunta(spec: DoorSpec): Pregunta {
         max: 9,
       })
     }
+    case 'mitadDoble': {
+      if (Math.random() < 0.5) {
+        const a = azar(2, Math.min(12, spec.max))
+        return conDistractores(`¿El DOBLE de ${a}?`, a * 2)
+      }
+      const mitad = azar(2, Math.min(12, spec.max))
+      return conDistractores(`¿La MITAD de ${mitad * 2}?`, mitad)
+    }
+    case 'reto3': {
+      const tipos = ['multiplicacion', 'division', 'mitadDoble', 'operacion', 'logica2'] as const
+      return generarPregunta({
+        tipo: tipos[Math.floor(Math.random() * tipos.length)],
+        max: 12,
+      })
+    }
     case 'reto': {
       const tipos = ['multiplicacion', 'division', 'logica'] as const
       return generarPregunta({
