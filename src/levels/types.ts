@@ -31,8 +31,6 @@ export interface LevelData {
   puertas: DoorSpec
   /** tiempo (ms) por debajo del cual se gana la estrella de rapidez */
   parMs: number
-  /** true a partir del nivel 7: permite doble salto */
-  dobleSalto?: boolean
   /** texto breve que se muestra al empezar el nivel */
   aviso?: string
 }

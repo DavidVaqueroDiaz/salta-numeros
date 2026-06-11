@@ -77,7 +77,6 @@ function empezarNivel(n: number): void {
   nivelActual = n
   level = new Level(data)
   player.empezar(level)
-  player.maxSaltos = data.dobleSalto ? 2 : 1
   tiempoMs = 0
   erroresPuertas = 0
   resetInput()
@@ -102,7 +101,10 @@ function comprobarPuertas(): void {
     h: player.h + 8,
   }
   for (const d of level.doors) {
-    if (d.abierta || !seSolapan(cerca, d.rect)) continue
+    // la zona de detección ocupa TODA la columna: con doble salto tampoco
+    // se puede cruzar una puerta por encima sin responder
+    const zona = { x: d.rect.x, y: 0, w: d.rect.w, h: level.heightPx }
+    if (d.abierta || !seSolapan(cerca, zona)) continue
     estado = 'puerta' // el cronómetro se pausa: las mates se piensan con calma
     resetInput()
     abrirPuertaMatematica(generarPregunta(d.spec), (res) => {

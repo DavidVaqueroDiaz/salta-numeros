@@ -205,10 +205,15 @@ export class Intro {
       }
     }
 
-    // fondo negro del cubo (huecos entre pegatinas)
-    ctx.fillStyle = '#101418'
-    const xs = esquinas.map((e) => e.x)
-    ctx.fillRect(Math.min(...xs) - 1, cy - alto / 2 - R * 0.4, Math.max(...xs) - Math.min(...xs) + 2, alto + R * 0.8)
+    // fondo oscuro SOLO dentro de cada cara (las juntas entre pegatinas)
+    const caraFondo = (p: { x: number; y: number }[]): void => {
+      ctx.fillStyle = '#101418'
+      ctx.beginPath()
+      ctx.moveTo(p[0].x, p[0].y)
+      for (let k = 1; k < p.length; k++) ctx.lineTo(p[k].x, p[k].y)
+      ctx.closePath()
+      ctx.fill()
+    }
 
     // caras laterales visibles
     for (let i = 0; i < 4; i++) {
@@ -218,13 +223,15 @@ export class Intro {
       const y1 = topY(e1)
       const y2 = topY(e2)
       const sombra = 0.75 + 0.25 * ((e1.d + e2.d) / 2)
+      const cara = [
+        { x: e1.x, y: y1 },
+        { x: e2.x, y: y2 },
+        { x: e2.x, y: y2 + alto },
+        { x: e1.x, y: y1 + alto },
+      ]
+      caraFondo(cara)
       quad(
-        [
-          { x: e1.x, y: y1 },
-          { x: e2.x, y: y2 },
-          { x: e2.x, y: y2 + alto },
-          { x: e1.x, y: y1 + alto },
-        ],
+        cara,
         (u, v) => {
           const base = PALETA_RUBIK[(i * 7 + u * 3 + v * 5) % 6]
           const n = parseInt(base.slice(1), 16)
@@ -237,9 +244,8 @@ export class Intro {
     }
 
     // cara superior
-    quad(
-      esquinas.map((e) => ({ x: e.x, y: topY(e) })),
-      (u, v) => PALETA_RUBIK[(u * 5 + v * 7 + 2) % 6],
-    )
+    const caraTop = esquinas.map((e) => ({ x: e.x, y: topY(e) }))
+    caraFondo(caraTop)
+    quad(caraTop, (u, v) => PALETA_RUBIK[(u * 5 + v * 7 + 2) % 6])
   }
 }

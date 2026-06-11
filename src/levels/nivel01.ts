@@ -20,4 +20,5 @@ export const nivel1: LevelData = {
   ],
   puertas: { tipo: 'suma', max: 5 },
   parMs: 35000,
+  aviso: '💡 ¡Doble salto! Toca saltar otra vez en el aire',
 }

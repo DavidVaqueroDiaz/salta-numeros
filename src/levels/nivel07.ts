@@ -19,6 +19,5 @@ export const nivel7: LevelData = {
   ],
   puertas: { tipo: 'multiplicacion', max: 5 },
   parMs: 100000,
-  dobleSalto: true,
-  aviso: '✨ ¡NUEVO! Pulsa saltar otra vez en el aire: ¡doble salto!',
+  aviso: '🚀 ¡Huecos gigantes! Usa el doble salto',
 }

@@ -17,8 +17,8 @@ export class Player {
   vy = 0
   mirando: 1 | -1 = 1
   enSuelo = false
-  /** 1 = salto normal, 2 = doble salto (niveles avanzados) */
-  maxSaltos = 1
+  /** número de saltos encadenables (2 = doble salto, activo siempre) */
+  maxSaltos = 2
   private saltosUsados = 0
   /** segundos (de juego) desde la última vez que pisó algo */
   private aireT = 99
@@ -88,6 +88,7 @@ export class Player {
       this.plataforma = null
       // En el aire, el salto extra siempre cuenta como el último disponible
       this.saltosUsados = conCoyote ? 1 : Math.max(this.saltosUsados + 1, this.maxSaltos)
+      this.aireT = 99 // que el coyote no regale un tercer salto justo tras despegar
       sonido.salto()
     }
     // Salto variable: si suelta el botón mientras sube, corta el impulso

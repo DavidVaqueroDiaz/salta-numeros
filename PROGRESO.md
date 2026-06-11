@@ -57,7 +57,11 @@ hacer `npm run build` y después `build-exe.ps1`.
 ## Mecánicas del personaje y del mundo (fase 2)
 
 - Coyote time (en tiempo de juego, no de reloj) + jump buffer + salto variable.
-- **Doble salto** a partir del nivel 7 (`dobleSalto: true` en el nivel).
+- **Doble salto SIEMPRE activo** (feedback de Vaquero 2026-06-11: en los
+  niveles 2-6 había monedas inalcanzables sin él). Consecuencia: la zona de
+  detección de las puertas ocupa toda la columna (de suelo a cielo), para
+  que no se puedan cruzar por encima sin responder. El salto extra en el
+  aire siempre cuenta como el último disponible (no hay triple salto).
 - **Monedas** con contador en HUD y en resultados (se guarda el máximo).
 - **Enemigos** que patrullan (giran en paredes y bordes): pisotón desde
   arriba los aplasta con rebote; tocarlos de lado = volver al respawn.

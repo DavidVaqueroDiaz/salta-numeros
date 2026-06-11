@@ -19,5 +19,4 @@ export const nivel10: LevelData = {
   ],
   puertas: { tipo: 'reto', max: 5 },
   parMs: 140000,
-  dobleSalto: true,
 }
