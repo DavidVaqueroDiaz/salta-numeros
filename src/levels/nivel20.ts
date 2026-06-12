@@ -20,5 +20,6 @@ export const nivel20: LevelData = {
   ],
   puertas: { tipo: 'reto2', max: 9 },
   parMs: 115000,
+  tema: 'volcan',
   aviso: '🎩 ¡NUEVO! El sombrero te teletransporta: toca a dónde quieres ir',
 }

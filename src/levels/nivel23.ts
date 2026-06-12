@@ -20,4 +20,5 @@ export const nivel23: LevelData = {
   ],
   puertas: { tipo: 'logica2', max: 12 },
   parMs: 125000,
+  tema: 'nieve',
 }

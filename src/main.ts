@@ -18,6 +18,12 @@ import {
   ocultarPantallas,
 } from './ui/screens'
 import { marcarTutorialVisto, tutorialVisto } from './storage/settings'
+import { añadirMonedas, cargarPersonajes } from './storage/shop'
+import {
+  cargarDesdeFichero,
+  guardarEnFichero,
+  guardarEnFicheroAlCerrar,
+} from './storage/sync'
 import { guardarResultado } from './storage/progress'
 import { Intro } from './ui/intro'
 
@@ -27,6 +33,7 @@ type Estado = 'intro' | 'menu' | 'jugando' | 'puerta' | 'resultados'
 
 let estado: Estado = 'intro'
 let intro: Intro | null = new Intro()
+let personajeEquipado = cargarPersonajes().equipado
 let level: Level | null = null
 let nivelActual = 1
 let tiempoMs = 0
@@ -80,6 +87,7 @@ function empezarNivel(n: number): void {
   if (!data) return
   nivelActual = n
   level = new Level(data)
+  personajeEquipado = cargarPersonajes().equipado
   player.empezar(level)
   tiempoMs = 0
   erroresPuertas = 0
@@ -144,6 +152,8 @@ function terminarNivel(): void {
     estrellas,
     monedas,
   )
+  añadirMonedas(monedas) // a la hucha (para la tienda de personajes)
+  void guardarEnFichero() // copia en el fichero del lanzador
   controles.classList.add('hidden')
   document.getElementById('poderes')!.classList.add('hidden')
   mostrarResultados(
@@ -205,6 +215,15 @@ botonPoder.sombrero.addEventListener('click', () => {
   avisar('🎩 Toca la pantalla a donde quieras teletransportarte')
 })
 
+// Atajos de teclado: 1 = gafas, 2 = arcoíris, 3 = sombrero (y siguientes
+// números para futuros poderes, en el mismo orden que los iconos)
+window.addEventListener('keydown', (e) => {
+  if (estado !== 'jugando') return
+  if (e.key === '1') botonPoder.gafas.click()
+  else if (e.key === '2') botonPoder.arcoiris.click()
+  else if (e.key === '3') botonPoder.sombrero.click()
+})
+
 function actualizarPoderHud(): void {
   const hudPoder = document.getElementById('hud-power')!
   const partes: string[] = []
@@ -231,11 +250,12 @@ function actualizarPoderHud(): void {
     if (visible) {
       algunoVisible = true
       const emoji = tipo === 'gafas' ? '🕶️' : tipo === 'arcoiris' ? '🌈' : '🎩'
+      const tecla = tipo === 'gafas' ? '1' : tipo === 'arcoiris' ? '2' : '3'
       btn.textContent = activo
         ? tipo === 'sombrero'
           ? `${emoji}…`
           : `${emoji}${Math.ceil(estadoPorTipo[tipo].activoT)}`
-        : `${emoji}×${cuantos}`
+        : `${tecla}·${emoji}×${cuantos}`
     }
   }
   poderes.classList.toggle('hidden', !algunoVisible || estado !== 'jugando')
@@ -256,6 +276,7 @@ function update(dt: number): void {
 
   level.moviles.forEach((p) => p.update(dt))
   level.caedizas.forEach((p) => p.update(dt))
+  level.parpadeantes.forEach((p) => p.update(dt))
   level.enemigos.forEach((e) => e.update(dt, level!))
 
   player.update(dt, level)
@@ -434,12 +455,25 @@ document.getElementById('game')!.addEventListener('pointerdown', (e) => {
 
 function render(): void {
   if (estado === 'intro' && intro) intro.draw(canvasJuego)
-  else if (level) renderer.draw(level, player)
+  else if (level) renderer.draw(level, player, personajeEquipado)
 }
 
 aplicarAjustes() // sonido y tamaño de controles guardados en el dispositivo
 startLoop(update, render)
 ocultarPantallas() // la intro arranca a pantalla limpia; al acabar va al menú
+
+// Recupera el progreso del fichero del lanzador (si existe) y fusiónalo
+void cargarDesdeFichero().then((habia) => {
+  if (!habia) return
+  aplicarAjustes()
+  personajeEquipado = cargarPersonajes().equipado
+  if (estado === 'menu') mostrarMenu(empezarNivel) // refresca candados/estrellas
+})
+
+// Al cerrar u ocultar la ventana, vuelca el progreso al fichero
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') guardarEnFicheroAlCerrar()
+})
 
 // Gancho de depuración solo en desarrollo (npm run dev)
 if (import.meta.env.DEV) {

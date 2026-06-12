@@ -20,4 +20,5 @@ export const nivel16: LevelData = {
   ],
   puertas: { tipo: 'multiplicacion', max: 9 },
   parMs: 110000,
+  tema: 'volcan',
 }

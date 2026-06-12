@@ -2,6 +2,15 @@ import { COLORES, NIVELES, NIVEL_FINAL, TOTAL_NIVELES } from '../levels/index'
 import { cargarProgreso, nivelDesbloqueado } from '../storage/progress'
 import { cargarAjustes, guardarAjustes, type Ajustes } from '../storage/settings'
 import { setSonidoActivado } from '../game/sound'
+import {
+  cargarMonedero,
+  cargarPersonajes,
+  comprarPersonaje,
+  equiparPersonaje,
+  precioPersonaje,
+} from '../storage/shop'
+import { guardarEnFichero } from '../storage/sync'
+import { dibujarPersonaje, FORMAS } from '../engine/character'
 
 const CONTRASENA_DESBLOQUEO = '1566'
 
@@ -74,9 +83,25 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
     btnFinal.disabled = true
   }
 
-  // Fila inferior: ajustes y desbloqueo con contraseña
+  // Fila inferior: tienda, guardar, ajustes y desbloqueo con contraseña
   const fila = document.createElement('div')
   fila.className = 'fila-botones'
+
+  const btnTienda = document.createElement('button')
+  btnTienda.className = 'boton-grande'
+  btnTienda.textContent = `🛍️ Tienda · 🪙 ${cargarMonedero()}`
+  btnTienda.addEventListener('click', () => mostrarTienda(alElegir))
+
+  const btnGuardar = document.createElement('button')
+  btnGuardar.className = 'boton-grande secundario'
+  btnGuardar.textContent = '💾 Guardar'
+  btnGuardar.addEventListener('click', () => {
+    btnGuardar.textContent = '💾 …'
+    void guardarEnFichero().then((enFichero) => {
+      btnGuardar.textContent = enFichero ? '✅ ¡Guardado!' : '✅ Guardado (navegador)'
+      setTimeout(() => (btnGuardar.textContent = '💾 Guardar'), 2000)
+    })
+  })
 
   const btnAjustes = document.createElement('button')
   btnAjustes.className = 'boton-grande secundario'
@@ -95,10 +120,85 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
     }
   })
 
-  fila.append(btnAjustes, btnDesbloquear)
+  fila.append(btnTienda, btnGuardar, btnAjustes, btnDesbloquear)
 
   pantalla.append(titulo, subtitulo, rejilla, btnFinal, fila)
   pantalla.classList.remove('hidden')
+}
+
+/** Tienda: se juega con el 1; los demás personajes se compran con monedas. */
+function mostrarTienda(alElegir: (nivel: number) => void): void {
+  const dialogo = document.getElementById('dialogo')!
+  dialogo.innerHTML = ''
+  const caja = document.createElement('div')
+  caja.className = 'dialogo-caja'
+
+  const titulo = document.createElement('p')
+  titulo.className = 'puerta-pregunta'
+  titulo.textContent = `🛍️ Tienda · 🪙 ${cargarMonedero()}`
+
+  const pista = document.createElement('p')
+  pista.className = 'tutorial-texto'
+  pista.textContent = 'Consigue monedas en los niveles para comprar personajes'
+
+  const rejilla = document.createElement('div')
+  rejilla.className = 'tienda-rejilla'
+
+  const personajes = cargarPersonajes()
+  for (let n = 1; n <= 25; n++) {
+    const celda = document.createElement('button')
+    celda.className = 'tienda-celda'
+
+    const mini = document.createElement('canvas')
+    mini.width = 56
+    mini.height = 66
+    const ctx = mini.getContext('2d')!
+    const forma = FORMAS[n]
+    const colsF = Math.max(...forma.map(([c]) => c)) + 1
+    const rowsF = Math.max(...forma.map(([, r]) => r)) + 1
+    dibujarPersonaje(ctx, n, 28, 62, 1, Math.min(40 / colsF, 56 / rowsF))
+
+    const etiqueta = document.createElement('span')
+    const comprado = personajes.comprados.includes(n)
+    const equipado = personajes.equipado === n
+    if (equipado) {
+      etiqueta.textContent = '✔ Puesto'
+      celda.classList.add('equipado')
+    } else if (comprado) {
+      etiqueta.textContent = 'Elegir'
+    } else {
+      etiqueta.textContent = `🪙 ${precioPersonaje(n)}`
+      if (cargarMonedero() < precioPersonaje(n)) celda.classList.add('caro')
+    }
+
+    celda.addEventListener('click', () => {
+      if (equipado) return
+      if (comprado) {
+        equiparPersonaje(n)
+      } else if (!comprarPersonaje(n)) {
+        etiqueta.textContent = '¡Faltan 🪙!'
+        setTimeout(() => (etiqueta.textContent = `🪙 ${precioPersonaje(n)}`), 1200)
+        return
+      }
+      void guardarEnFichero()
+      mostrarTienda(alElegir) // re-pinta con el nuevo estado
+    })
+
+    celda.append(mini, etiqueta)
+    rejilla.appendChild(celda)
+  }
+
+  const cerrar = document.createElement('button')
+  cerrar.className = 'boton-grande'
+  cerrar.textContent = 'Cerrar'
+  cerrar.addEventListener('click', () => {
+    cerrarDialogo()
+    mostrarMenu(alElegir) // refresca la hucha del botón
+  })
+
+  caja.append(titulo, pista, rejilla, cerrar)
+  dialogo.appendChild(caja)
+  dialogo.classList.remove('hidden')
 }
 
 function cerrarDialogo(): void {

@@ -1,9 +1,57 @@
 import { Level, TILE } from '../game/level'
 import { Player } from '../game/player'
 import { dibujarPersonaje } from './character'
+import type { Tema } from '../levels/types'
 
 /** Filas visibles en pantalla; los niveles más altos usan cámara vertical. */
 const FILAS_VISTA = 11
+
+/** Paleta y decorados de cada mundo. */
+interface TemaVisual {
+  cielo: [string, string]
+  astro: 'sol' | 'luna' | null
+  nubes?: boolean
+  estrellas?: boolean
+  copos?: boolean
+  ascuas?: boolean
+  estalactitas?: boolean
+  planeta?: boolean
+  siluetas?: 'bosque' | 'volcan' | 'castillo'
+  tierra: string
+  tierraSombra: string
+  franja: string
+}
+
+const TEMAS: Record<Tema, TemaVisual> = {
+  pradera: {
+    cielo: ['#7dd3f8', '#d9f4ff'], astro: 'sol', nubes: true,
+    tierra: '#b07d4f', tierraSombra: '#94633a', franja: '#67c26b',
+  },
+  bosque: {
+    cielo: ['#6fb7a0', '#d8f3e3'], astro: 'sol', nubes: true, siluetas: 'bosque',
+    tierra: '#8a5a33', tierraSombra: '#6d4527', franja: '#3f8f4a',
+  },
+  cueva: {
+    cielo: ['#26242f', '#4d4660'], astro: null, estalactitas: true,
+    tierra: '#5b5965', tierraSombra: '#454351', franja: '#7b7787',
+  },
+  volcan: {
+    cielo: ['#3a1d1d', '#7a3b2e'], astro: null, ascuas: true, siluetas: 'volcan',
+    tierra: '#4a3f3f', tierraSombra: '#363030', franja: '#e85d04',
+  },
+  nieve: {
+    cielo: ['#bcd9ee', '#eef7fc'], astro: 'sol', nubes: true, copos: true,
+    tierra: '#dce8f2', tierraSombra: '#b9cdde', franja: '#ffffff',
+  },
+  espacio: {
+    cielo: ['#0b0d2a', '#27315e'], astro: null, estrellas: true, planeta: true,
+    tierra: '#6b5b8a', tierraSombra: '#544871', franja: '#9d8bbf',
+  },
+  castillo: {
+    cielo: ['#1d1135', '#4a2a6a'], astro: 'luna', estrellas: true, siluetas: 'castillo',
+    tierra: '#7f7a85', tierraSombra: '#615c68', franja: '#9a93a3',
+  },
+}
 
 export class Renderer {
   private readonly canvas: HTMLCanvasElement
@@ -51,7 +99,7 @@ export class Renderer {
     }
   }
 
-  draw(level: Level, player: Player): void {
+  draw(level: Level, player: Player, numeroPersonaje?: number): void {
     const ctx = this.ctx
     ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0)
 
@@ -76,10 +124,10 @@ export class Renderer {
     this.jefeDibujo(level)
     this.xianaDibujo(level)
     this.meta(level)
-    this.personajeConEfectos(level, player)
+    this.personajeConEfectos(level, player, numeroPersonaje ?? level.data.numero)
   }
 
-  private personajeConEfectos(level: Level, player: Player): void {
+  private personajeConEfectos(level: Level, player: Player, numero: number): void {
     const ctx = this.ctx
     const t = performance.now() / 1000
     // estela arcoíris al volar
@@ -104,7 +152,7 @@ export class Renderer {
     if (player.invisibleT > 0) ctx.globalAlpha = 0.35
     dibujarPersonaje(
       ctx,
-      level.data.numero,
+      numero,
       player.x + player.w / 2,
       player.y + player.h,
       player.mirando,
@@ -298,35 +346,156 @@ export class Renderer {
     }
   }
 
+  private tema(level: Level): TemaVisual {
+    return TEMAS[level.data.tema ?? 'pradera']
+  }
+
   private fondo(level: Level): void {
     const ctx = this.ctx
-    const g = ctx.createLinearGradient(0, 0, 0, this.viewH)
-    g.addColorStop(0, '#7dd3f8')
-    g.addColorStop(1, '#d9f4ff')
+    const tema = this.tema(level)
+    const t = performance.now() / 1000
+    const w = this.viewW
+    const h = this.viewH
+
+    const g = ctx.createLinearGradient(0, 0, 0, h)
+    g.addColorStop(0, tema.cielo[0])
+    g.addColorStop(1, tema.cielo[1])
     ctx.fillStyle = g
-    ctx.fillRect(0, 0, this.viewW, this.viewH)
+    ctx.fillRect(0, 0, w, h)
 
-    // Sol
-    ctx.fillStyle = '#ffd60a'
-    ctx.beginPath()
-    ctx.arc(this.viewW - 70, 60, 34, 0, Math.PI * 2)
-    ctx.fill()
-
-    // Nubes en posiciones fijas (deterministas por nivel)
-    ctx.fillStyle = 'rgba(255,255,255,0.9)'
-    for (let i = 0; i < 5; i++) {
-      const x = ((i * 397 + level.data.numero * 131) % Math.max(level.widthPx, 1)) % this.viewW
-      const y = 40 + ((i * 67) % 80)
+    if (tema.astro === 'sol') {
+      ctx.fillStyle = '#ffd60a'
       ctx.beginPath()
-      ctx.arc(x, y, 18, 0, Math.PI * 2)
-      ctx.arc(x + 22, y + 4, 14, 0, Math.PI * 2)
-      ctx.arc(x - 20, y + 6, 13, 0, Math.PI * 2)
+      ctx.arc(w - 70, 60, 34, 0, Math.PI * 2)
       ctx.fill()
+    } else if (tema.astro === 'luna') {
+      ctx.fillStyle = '#e9e4f0'
+      ctx.beginPath()
+      ctx.arc(w - 70, 60, 30, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#cfc7dd'
+      for (const [dx, dy, r] of [[-8, -5, 6], [9, 7, 4], [3, -11, 3]] as const) {
+        ctx.beginPath()
+        ctx.arc(w - 70 + dx, 60 + dy, r, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+
+    if (tema.estrellas) {
+      for (let i = 0; i < 38; i++) {
+        const x = (i * 487) % w
+        const y = (i * 233) % (h * 0.65)
+        ctx.fillStyle = `rgba(255,255,255,${0.35 + 0.5 * Math.abs(Math.sin(t * 1.6 + i))})`
+        ctx.fillRect(x, y, 2.5, 2.5)
+      }
+    }
+
+    if (tema.planeta) {
+      const px = w * 0.22
+      const py = h * 0.22
+      ctx.fillStyle = '#e07a5f'
+      ctx.beginPath()
+      ctx.arc(px, py, 26, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(244,217,123,0.85)'
+      ctx.lineWidth = 4
+      ctx.beginPath()
+      ctx.ellipse(px, py, 42, 11, -0.3, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+
+    if (tema.siluetas === 'bosque') {
+      ctx.fillStyle = 'rgba(34,86,56,0.5)'
+      for (let i = 0; i < 9; i++) {
+        const x = ((i * 173) % (w + 120)) - 60
+        const alto = 70 + ((i * 53) % 60)
+        ctx.beginPath()
+        ctx.moveTo(x, h)
+        ctx.lineTo(x + 40, h - alto)
+        ctx.lineTo(x + 80, h)
+        ctx.closePath()
+        ctx.fill()
+      }
+    } else if (tema.siluetas === 'volcan') {
+      ctx.fillStyle = 'rgba(30,16,14,0.75)'
+      ctx.beginPath()
+      ctx.moveTo(w * 0.5, h)
+      ctx.lineTo(w * 0.72, h * 0.32)
+      ctx.lineTo(w * 0.78, h * 0.32)
+      ctx.lineTo(w * 0.98, h)
+      ctx.closePath()
+      ctx.fill()
+      ctx.fillStyle = `rgba(255,120,30,${0.6 + 0.3 * Math.sin(t * 3)})`
+      ctx.beginPath()
+      ctx.ellipse(w * 0.75, h * 0.32, 16, 6, 0, 0, Math.PI * 2)
+      ctx.fill()
+    } else if (tema.siluetas === 'castillo') {
+      ctx.fillStyle = 'rgba(20,10,40,0.8)'
+      for (const [bx, bw, bh] of [[0.08, 0.07, 0.45], [0.18, 0.12, 0.32], [0.3, 0.06, 0.5]] as const) {
+        const x = w * bx
+        const ancho = w * bw
+        const y = h - h * bh
+        ctx.fillRect(x, y, ancho, h * bh)
+        // almenas
+        const diente = ancho / 5
+        for (let i = 0; i < 3; i++) ctx.fillRect(x + diente * (i * 2 + 0.25), y - 9, diente, 9)
+      }
+    }
+
+    if (tema.estalactitas) {
+      ctx.fillStyle = 'rgba(125,118,140,0.8)'
+      for (let i = 0; i < 10; i++) {
+        const x = ((i * 211) % (w + 80)) - 40
+        const alto = 26 + ((i * 37) % 42)
+        ctx.beginPath()
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x + 14, 0)
+        ctx.lineTo(x + 7, alto)
+        ctx.closePath()
+        ctx.fill()
+      }
+    }
+
+    if (tema.nubes) {
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'
+      for (let i = 0; i < 5; i++) {
+        const x = ((i * 397 + level.data.numero * 131) % Math.max(level.widthPx, 1)) % w
+        const y = 40 + ((i * 67) % 80)
+        ctx.beginPath()
+        ctx.arc(x, y, 18, 0, Math.PI * 2)
+        ctx.arc(x + 22, y + 4, 14, 0, Math.PI * 2)
+        ctx.arc(x - 20, y + 6, 13, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+
+    if (tema.copos) {
+      ctx.fillStyle = 'rgba(255,255,255,0.85)'
+      for (let i = 0; i < 32; i++) {
+        const x = (i * 311 + Math.sin(t + i) * 18) % w
+        const y = (i * 97 + t * 34) % h
+        ctx.beginPath()
+        ctx.arc(x, y, i % 3 === 0 ? 2.6 : 1.7, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+
+    if (tema.ascuas) {
+      for (let i = 0; i < 22; i++) {
+        const x = (i * 251 + Math.sin(t * 1.3 + i) * 24) % w
+        const y = h - ((i * 137 + t * 46) % h)
+        ctx.fillStyle = `rgba(255,${120 + (i % 3) * 40},20,${0.35 + 0.3 * Math.sin(t * 4 + i)})`
+        ctx.beginPath()
+        ctx.arc(x, y, 2.2, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
   }
 
   private tiles(level: Level, cam: number, camY: number): void {
     const ctx = this.ctx
+    const tema = this.tema(level)
+    const tAnim = performance.now() / 1000
     const c0 = Math.max(0, Math.floor(cam / TILE))
     const c1 = Math.min(level.cols - 1, Math.ceil((cam + this.viewW) / TILE))
     const r0 = Math.max(0, Math.floor(camY / TILE))
@@ -338,17 +507,16 @@ export class Renderer {
         const x = c * TILE
         const y = r * TILE
         if (t === 1) {
-          // Bloque de tierra con borde redondeado
-          ctx.fillStyle = '#b07d4f'
+          // Bloque de terreno del tema, con franja superior si está despejado
+          ctx.fillStyle = tema.tierra
           ctx.beginPath()
           ctx.roundRect(x, y, TILE, TILE, 4)
           ctx.fill()
-          ctx.fillStyle = '#94633a'
+          ctx.fillStyle = tema.tierraSombra
           ctx.fillRect(x + 4, y + 10, 6, 5)
           ctx.fillRect(x + 18, y + 20, 7, 5)
-          // Césped si arriba está despejado
           if (level.tileAt(c, r - 1) !== 1) {
-            ctx.fillStyle = '#67c26b'
+            ctx.fillStyle = tema.franja
             ctx.beginPath()
             ctx.roundRect(x, y - 3, TILE, 11, 5)
             ctx.fill()
@@ -369,10 +537,34 @@ export class Renderer {
           ctx.fillStyle = 'rgba(64,160,255,0.55)'
           ctx.fillRect(x, y, TILE, TILE)
           if (!level.esAgua(c, r - 1)) {
-            // superficie con olitas
             ctx.fillStyle = 'rgba(255,255,255,0.5)'
             ctx.fillRect(x, y, TILE, 3)
           }
+        } else if (t === 4) {
+          // Hielo: bloque azulado con brillo diagonal
+          ctx.fillStyle = '#bfe2f8'
+          ctx.beginPath()
+          ctx.roundRect(x, y, TILE, TILE, 4)
+          ctx.fill()
+          ctx.fillStyle = '#e9f6ff'
+          ctx.fillRect(x, y, TILE, 5)
+          ctx.strokeStyle = 'rgba(255,255,255,0.8)'
+          ctx.lineWidth = 2.5
+          ctx.beginPath()
+          ctx.moveTo(x + 7, y + 24)
+          ctx.lineTo(x + 20, y + 9)
+          ctx.stroke()
+        } else if (t === 5) {
+          // Lava burbujeante
+          ctx.fillStyle = '#d00000'
+          ctx.fillRect(x, y, TILE, TILE)
+          ctx.fillStyle = `rgba(255,186,8,${0.55 + 0.3 * Math.sin(tAnim * 4 + c)})`
+          ctx.fillRect(x, y, TILE, 8)
+          ctx.fillStyle = '#ff5400'
+          const burbuja = (tAnim * 2 + c * 0.7) % 1
+          ctx.beginPath()
+          ctx.arc(x + 8 + (c % 3) * 8, y + 6 + burbuja * 18, 3.5 * (1 - burbuja), 0, Math.PI * 2)
+          ctx.fill()
         }
       }
     }
@@ -403,6 +595,32 @@ export class Renderer {
       ctx.fillStyle = '#8a5a33'
       ctx.fillRect(p.x + sacudida + 7, p.y + 4, 6, 3)
       ctx.fillRect(p.x + sacudida + 19, p.y + 5, 6, 3)
+    }
+    // plataformas que parpadean (cristal violeta)
+    const tParp = performance.now() / 1000
+    for (const p of level.parpadeantes) {
+      if (!p.activa()) {
+        // fantasma tenue para saber dónde reaparecerá
+        ctx.globalAlpha = 0.15
+        ctx.strokeStyle = '#b298dc'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.roundRect(p.x, p.y, p.w, p.h, 5)
+        ctx.stroke()
+        ctx.globalAlpha = 1
+        continue
+      }
+      if (p.avisando()) ctx.globalAlpha = 0.45 + 0.45 * Math.sin(tParp * 26)
+      ctx.fillStyle = '#b298dc'
+      ctx.beginPath()
+      ctx.roundRect(p.x, p.y, p.w, p.h, 5)
+      ctx.fill()
+      ctx.strokeStyle = '#7d5ba6'
+      ctx.lineWidth = 2.5
+      ctx.stroke()
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'
+      ctx.fillRect(p.x + 5, p.y + 2.5, 9, 2.5)
+      ctx.globalAlpha = 1
     }
   }
 
@@ -547,7 +765,7 @@ export class Renderer {
     ctx.globalAlpha = 1
   }
 
-  /** Xiana: niña rubia con coletas. Enjaulada hasta vencer al jefe. */
+  /** Xiana, estilo dibujo animado: ojazos, flequillo y coletas con gomas. */
   private xianaDibujo(level: Level): void {
     const x = level.xiana
     if (!x) return
@@ -555,64 +773,155 @@ export class Renderer {
     const t = performance.now() / 1000
     const cx = x.x + TILE / 2
     const piesY = x.y + TILE
-    const salto = x.libre ? Math.abs(Math.sin(t * 6)) * 6 : 0
+    const salto = x.libre ? Math.abs(Math.sin(t * 6)) * 7 : 0
     const base = piesY - salto
+    const balanceo = x.libre ? Math.sin(t * 6) * 0.06 : Math.sin(t * 1.2) * 0.02
 
-    // piernas
-    ctx.strokeStyle = '#e8b88a'
-    ctx.lineWidth = 3
+    ctx.save()
+    ctx.translate(cx, base)
+    ctx.rotate(balanceo)
     ctx.lineCap = 'round'
+
+    const PIEL = '#ffdfc4'
+    const PELO = '#ffd60a'
+    const PELO_SOMBRA = '#e6b800'
+    const ROSA = '#ff5d8f'
+    const ROSA_OSCURO = '#e8447a'
+
+    // piernas con calcetines y zapatitos rojos
+    ctx.strokeStyle = PIEL
+    ctx.lineWidth = 3.4
     for (const lado of [-1, 1]) {
       ctx.beginPath()
-      ctx.moveTo(cx + lado * 4, base - 10)
-      ctx.lineTo(cx + lado * 4, base)
+      ctx.moveTo(lado * 4.5, -12)
+      ctx.lineTo(lado * 4.5, -3)
       ctx.stroke()
     }
-    // vestido rosa
-    ctx.fillStyle = '#ff5d8f'
+    ctx.fillStyle = '#c1121f'
+    for (const lado of [-1, 1]) {
+      ctx.beginPath()
+      ctx.ellipse(lado * 5, -1.6, 4.4, 2.4, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    // coletas DETRÁS de la cabeza: dos mechones largos que caen
+    for (const lado of [-1, 1]) {
+      ctx.fillStyle = PELO
+      ctx.beginPath()
+      ctx.ellipse(lado * 12.5, -34 + Math.sin(t * 5 + lado) * (x.libre ? 1.6 : 0.4), 4.6, 9.5, lado * 0.25, 0, Math.PI * 2)
+      ctx.fill()
+      // goma rosa de la coleta
+      ctx.strokeStyle = ROSA_OSCURO
+      ctx.lineWidth = 2.4
+      ctx.beginPath()
+      ctx.arc(lado * 10.6, -40.5, 3, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+
+    // vestido rosa con vuelo y mangas
+    ctx.fillStyle = ROSA
     ctx.beginPath()
-    ctx.moveTo(cx, base - 30)
-    ctx.lineTo(cx + 11, base - 9)
-    ctx.lineTo(cx - 11, base - 9)
+    ctx.moveTo(-5.5, -28)
+    ctx.quadraticCurveTo(-13, -12, -11.5, -10)
+    ctx.lineTo(11.5, -10)
+    ctx.quadraticCurveTo(13, -12, 5.5, -28)
     ctx.closePath()
     ctx.fill()
-    // brazos
-    ctx.strokeStyle = '#e8b88a'
+    ctx.strokeStyle = ROSA_OSCURO
+    ctx.lineWidth = 1.6
+    ctx.stroke()
+    // bajo de la falda
+    ctx.strokeStyle = ROSA_OSCURO
+    ctx.beginPath()
+    ctx.moveTo(-11.5, -10)
+    ctx.quadraticCurveTo(0, -7.4, 11.5, -10)
+    ctx.stroke()
+
+    // brazos (arriba celebrando si está libre)
+    ctx.strokeStyle = PIEL
+    ctx.lineWidth = 3.2
     for (const lado of [-1, 1]) {
       ctx.beginPath()
-      ctx.moveTo(cx + lado * 5, base - 24)
-      // libre: brazos arriba celebrando; enjaulada: brazos abajo
-      ctx.lineTo(cx + lado * 10, base - (x.libre ? 32 : 18))
+      ctx.moveTo(lado * 5.5, -25)
+      if (x.libre) ctx.lineTo(lado * 12, -35)
+      else ctx.lineTo(lado * 9.5, -17)
       ctx.stroke()
     }
-    // cabeza
-    ctx.fillStyle = '#ffe0bd'
+
+    // cabeza grande
+    ctx.fillStyle = PIEL
     ctx.beginPath()
-    ctx.arc(cx, base - 36, 8, 0, Math.PI * 2)
+    ctx.arc(0, -38, 10.5, 0, Math.PI * 2)
     ctx.fill()
-    // pelo rubio con coletas
-    ctx.fillStyle = '#ffd60a'
+
+    // melena: casquete con flequillo de tres puntas
+    ctx.fillStyle = PELO
     ctx.beginPath()
-    ctx.arc(cx, base - 38, 8.5, Math.PI, 2 * Math.PI)
+    ctx.arc(0, -39.5, 11.2, Math.PI * 0.95, Math.PI * 2.05)
     ctx.fill()
-    ctx.fillRect(cx - 8.5, base - 38, 17, 3)
-    for (const lado of [-1, 1]) {
-      ctx.beginPath()
-      ctx.arc(cx + lado * 10, base - 34, 4, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    // carita
-    ctx.fillStyle = '#1d3557'
-    for (const lado of [-1, 1]) {
-      ctx.beginPath()
-      ctx.arc(cx + lado * 3, base - 36, 1.2, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    ctx.strokeStyle = '#1d3557'
-    ctx.lineWidth = 1.4
     ctx.beginPath()
-    ctx.arc(cx, base - 33, 2.6, 0.15 * Math.PI, 0.85 * Math.PI)
+    for (const [px0, px1] of [[-11, -4], [-4, 3.5], [3.5, 11]] as const) {
+      ctx.moveTo(px0, -41)
+      ctx.quadraticCurveTo((px0 + px1) / 2, -33.5, px1, -41)
+    }
+    ctx.fill()
+    // brillitos del pelo
+    ctx.strokeStyle = PELO_SOMBRA
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.arc(0, -39.5, 9.2, Math.PI * 1.15, Math.PI * 1.5)
     ctx.stroke()
+
+    // ojazos con iris azul y brillo
+    for (const lado of [-1, 1]) {
+      const ex = lado * 4.2
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.ellipse(ex, -37.5, 3.1, 3.7, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#3a86ff'
+      ctx.beginPath()
+      ctx.arc(ex, -37, 2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#1d3557'
+      ctx.beginPath()
+      ctx.arc(ex, -37, 1, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.arc(ex + 0.9, -38.1, 0.8, 0, Math.PI * 2)
+      ctx.fill()
+      // pestañas
+      ctx.strokeStyle = '#1d3557'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(ex + lado * 2.6, -40.6)
+      ctx.lineTo(ex + lado * 3.8, -41.8)
+      ctx.stroke()
+    }
+
+    // mofletes y sonrisa (boca abierta de alegría si está libre)
+    ctx.fillStyle = 'rgba(255,140,160,0.55)'
+    for (const lado of [-1, 1]) {
+      ctx.beginPath()
+      ctx.ellipse(lado * 6.4, -33.6, 2, 1.3, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    if (x.libre) {
+      ctx.fillStyle = '#9d2235'
+      ctx.beginPath()
+      ctx.arc(0, -33.2, 2.4, 0, Math.PI)
+      ctx.closePath()
+      ctx.fill()
+    } else {
+      ctx.strokeStyle = '#9d2235'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.arc(0, -34.2, 2.6, 0.15 * Math.PI, 0.85 * Math.PI)
+      ctx.stroke()
+    }
+
+    ctx.restore()
 
     if (x.libre) {
       // corazones flotando al celebrar

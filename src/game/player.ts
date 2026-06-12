@@ -15,6 +15,8 @@ export class Player {
   readonly w = 24
   readonly h = 30
   vy = 0
+  /** velocidad horizontal (con inercia solo sobre hielo) */
+  private vx = 0
   mirando: 1 | -1 = 1
   enSuelo = false
   /** número de saltos encadenables (2 = doble salto, activo siempre) */
@@ -63,6 +65,7 @@ export class Player {
     this.x = this.puntoRespawn.x
     this.y = this.puntoRespawn.y
     this.vy = 0
+    this.vx = 0
     this.enSuelo = false
     this.saltosUsados = 0
     this.plataforma = null
@@ -101,14 +104,26 @@ export class Player {
     this.aireT += dt
     if (this.enSuelo || this.plataforma) this.aireT = 0
 
-    // --- Movimiento horizontal ---
+    // --- Movimiento horizontal (con derrape sobre hielo) ---
     let dir = 0
     if (input.left) dir -= 1
     if (input.right) dir += 1
     if (dir !== 0) this.mirando = dir as 1 | -1
 
-    this.x += dir * VELOCIDAD * dt
-    this.resolverHorizontal(level, dir)
+    const sobreHielo =
+      this.enSuelo &&
+      level.esHielo(
+        Math.floor((this.x + this.w / 2) / TILE),
+        Math.floor((this.y + this.h + 2) / TILE),
+      )
+    if (sobreHielo) {
+      // acelera y frena despacio: el hielo resbala
+      this.vx += (dir * VELOCIDAD - this.vx) * Math.min(1, 2.4 * dt)
+    } else {
+      this.vx = dir * VELOCIDAD
+    }
+    this.x += this.vx * dt
+    this.resolverHorizontal(level, Math.sign(this.vx))
 
     const pies0 = this.y + this.h
     if (this.enAgua) {
@@ -137,7 +152,10 @@ export class Player {
       // Salto variable: si suelta el botón mientras sube, corta el impulso
       if (!input.jumpHeld && this.vy < -200) this.vy = -200
 
-      this.vy = Math.min(this.vy + GRAVEDAD * dt, CAIDA_MAX)
+      // gravedad lunar en los niveles de espacio: saltos altos y flotantes
+      const gravedad = level.data.gravedadBaja ? GRAVEDAD * 0.45 : GRAVEDAD
+      const caidaMax = level.data.gravedadBaja ? CAIDA_MAX * 0.6 : CAIDA_MAX
+      this.vy = Math.min(this.vy + gravedad * dt, caidaMax)
       // --- Vuelo (arcoíris): mantener el salto empuja hacia arriba ---
       if (this.volarT > 0 && input.jumpHeld) {
         this.vy = Math.max(this.vy - 3400 * dt, -280)
@@ -205,17 +223,21 @@ export class Player {
     }
   }
 
-  /** ¿Está tocando un pincho o ha caído fuera del mapa? */
+  /** ¿Está tocando un pincho o lava, o ha caído fuera del mapa? */
   haMuerto(level: Level): boolean {
     if (this.y > level.heightPx + 100) return true
-    // rectángulo reducido: solo cuenta si de verdad toca el pincho
+    // rectángulo reducido: solo cuenta si de verdad lo toca
     const m = 6
     const c0 = Math.floor((this.x + m) / TILE)
     const c1 = Math.floor((this.x + this.w - m) / TILE)
     const r0 = Math.floor((this.y + m) / TILE)
     const r1 = Math.floor((this.y + this.h - m) / TILE)
     for (let r = r0; r <= r1; r++)
-      for (let c = c0; c <= c1; c++) if (level.esPincho(c, r)) return true
+      for (let c = c0; c <= c1; c++) if (level.esLetal(c, r)) return true
+    // pisar lava también quema (los pies están justo encima de la celda)
+    const rPies = Math.floor((this.y + this.h + 2) / TILE)
+    for (let c = c0; c <= c1; c++)
+      if (level.tileAt(c, rPies) === 5 /* LAVA */) return true
     return false
   }
 }

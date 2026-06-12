@@ -20,5 +20,6 @@ export const nivel15: LevelData = {
   ],
   puertas: { tipo: 'reto2', max: 9 },
   parMs: 110000,
+  tema: 'cueva',
   aviso: '🌈 ¡NUEVO! El arcoíris te deja VOLAR: mantén pulsado el salto',
 }

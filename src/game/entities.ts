@@ -285,6 +285,40 @@ export class Tubo {
   }
 }
 
+/** Plataforma que parpadea: visible ~1,7 s, avisa parpadeando y desaparece ~1,1 s. */
+export class PlataformaParpadeante implements PlataformaPisable {
+  readonly w = TILE
+  readonly h = 12
+  readonly x: number
+  readonly y: number
+  dxUlt = 0
+  dyUlt = 0
+  private t: number
+  private readonly CICLO = 2.8
+  private readonly VISIBLE = 1.7
+
+  constructor(col: number, fila: number) {
+    this.x = col * TILE
+    this.y = fila * TILE + TILE - this.h
+    // desfase por columna: no parpadean todas a la vez
+    this.t = (col % 4) * 0.55
+  }
+
+  activa(): boolean {
+    return this.t % this.CICLO < this.VISIBLE
+  }
+
+  /** true en los últimos 0,5 s antes de desaparecer (para avisar). */
+  avisando(): boolean {
+    const fase = this.t % this.CICLO
+    return fase > this.VISIBLE - 0.5 && fase < this.VISIBLE
+  }
+
+  update(dt: number): void {
+    this.t += dt
+  }
+}
+
 export class Checkpoint {
   activado = false
   readonly x: number

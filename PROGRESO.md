@@ -161,7 +161,37 @@ hacer `npm run build` y después `build-exe.ps1`.
       y 200 preguntas generadas sin fallos.
 - [ ] **Fase 3** — Despliegue HTTPS para la tablet (GitHub Pages o Netlify).
 
-## ⏸️ EN CURSO — retomar aquí (sesión 2026-06-11, pausada por Vaquero)
+## ✅ Gran expansión COMPLETADA (2026-06-12)
+
+Todo lo planificado abajo quedó hecho y verificado:
+- **Tienda de personajes** (botón 🛍️ en el menú, con la hucha 🪙 visible):
+  se juega con el personaje EQUIPADO (por defecto el 1); los 2-25 se
+  compran a nº×5 monedas. La hucha suma las monedas de cada nivel
+  completado. `src/storage/shop.ts` + tienda en `screens.ts` (mini-canvas
+  por personaje). Comprar también equipa.
+- **Niveles 26-35 + jefe en el 36** (TOTAL_NIVELES=35, rejilla 7×5):
+  26-28 hielo resbaladizo ('I', inercia en player.vx), 29-31 gravedad
+  lunar (`gravedadBaja`, salto ~244px vs 134), 32-35 castillo con lava
+  mortal ('L') y plataformas parpadeantes ('b', ciclo 2,8 s con aviso).
+- **Temas visuales** (`tema` en LevelData, TEMAS en renderer): pradera 1-5,
+  bosque 6-10, cueva 11-15, volcán 16-20, nieve 21-28, espacio 29-31,
+  castillo 32-36. Cielos, astros, siluetas, copos/ascuas/estrellas y
+  paleta de suelo propios por mundo.
+- **Xiana rediseñada** estilo dibujo animado (ojazos con iris azul y
+  brillo, flequillo de tres puntas, coletas con goma rosa, mofletes,
+  vestido con vuelo, zapatitos; boca abierta de alegría al liberarla).
+- **Atajos de teclado**: 1=gafas, 2=arcoíris, 3=sombrero (los iconos
+  muestran el número: "1·🕶️×1").
+- **Progreso a prueba de balas**: lanzador SIEMPRE en el puerto 38754
+  (espera a que se libere; si hay otra copia, abre su navegador y sale);
+  endpoints GET/POST `/api/progreso` que guardan
+  `progreso-salta-numeros.json` junto al exe (UTF-8 sin BOM); el juego
+  fusiona fichero↔navegador al arrancar (lo mejor de cada uno) y vuelca
+  al completar nivel, comprar, con el botón **💾 Guardar** del menú y al
+  ocultar la ventana (sendBeacon). `src/storage/sync.ts`.
+- Mates nuevas en niveles 26+: `mitadDoble` y `reto3` (tablas hasta 12).
+
+## ⏸️ Plan original de la expansión (ya ejecutado, sesión 2026-06-11)
 
 Decisiones tomadas con Vaquero antes de pausar:
 - **PC primero**: nada de hosting/tablet por ahora; el exe es la plataforma.

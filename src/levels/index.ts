@@ -24,6 +24,16 @@ import { nivel22 } from './nivel22'
 import { nivel23 } from './nivel23'
 import { nivel24 } from './nivel24'
 import { nivel25 } from './nivel25'
+import { nivel26 } from './nivel26'
+import { nivel27 } from './nivel27'
+import { nivel28 } from './nivel28'
+import { nivel29 } from './nivel29'
+import { nivel30 } from './nivel30'
+import { nivel31 } from './nivel31'
+import { nivel32 } from './nivel32'
+import { nivel33 } from './nivel33'
+import { nivel34 } from './nivel34'
+import { nivel35 } from './nivel35'
 import { nivelFinal } from './nivelfinal'
 
 /** Colores oficiales estilo Numberblocks, del 1 al 10. */
@@ -40,7 +50,7 @@ export const COLORES: Record<number, string> = {
   10: '#adb5bd', // plateado (cuerpo blanco con borde rojo)
 }
 
-export const TOTAL_NIVELES = 25
+export const TOTAL_NIVELES = 35
 
 export const NIVELES: Record<number, LevelData> = {
   1: nivel1,
@@ -68,8 +78,18 @@ export const NIVELES: Record<number, LevelData> = {
   23: nivel23,
   24: nivel24,
   25: nivel25,
-  26: nivelFinal, // el Comecubos y Xiana
+  26: nivel26,
+  27: nivel27,
+  28: nivel28,
+  29: nivel29,
+  30: nivel30,
+  31: nivel31,
+  32: nivel32,
+  33: nivel33,
+  34: nivel34,
+  35: nivel35,
+  36: nivelFinal, // el Comecubos y Xiana
 }
 
 /** Número del nivel final (jefe). */
-export const NIVEL_FINAL = 26
+export const NIVEL_FINAL = 36

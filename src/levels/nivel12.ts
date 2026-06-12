@@ -20,4 +20,5 @@ export const nivel12: LevelData = {
   ],
   puertas: { tipo: 'division', max: 9 },
   parMs: 100000,
+  tema: 'cueva',
 }

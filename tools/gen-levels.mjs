@@ -31,7 +31,12 @@ function rejilla(filas, ancho) {
  * puertas en cols 35 y 80 (filas 6-9 + techo en 5), P en (9,2), M en (9,105),
  * suelo con huecos [20-22] y [55-58] salvo que se pase `suelo` propio.
  */
-function nivelEstandar({ extras = [], huecos = [[20, 22], [55, 58]] }) {
+function nivelEstandar({
+  extras = [],
+  huecos = [[20, 22], [55, 58]],
+  hielo = [],
+  lava = [],
+}) {
   const W = 110
   const z = rejilla(11, W)
   for (const col of [35, 80]) {
@@ -42,12 +47,15 @@ function nivelEstandar({ extras = [], huecos = [[20, 22], [55, 58]] }) {
   z.pon(9, 105, 'M')
   z.rellena(10, 0, W - 1, '#')
   for (const [a, b] of huecos) z.rellena(10, a, b, '.')
+  for (const [a, b] of hielo) z.rellena(10, a, b, 'I')
+  for (const [a, b] of lava) z.rellena(10, a, b, 'L')
   for (const [r, c, texto] of extras) z.pon(r, c, texto)
   return z.filas()
 }
 
 const NIVELES = {
   11: {
+    tema: 'cueva',
     tipo: 'multiplicacion', max: 9, par: 100000,
     comentario: 'Empieza la zona difícil: tablas hasta el 9 y un vigilante.',
     mapa: nivelEstandar({
@@ -59,6 +67,7 @@ const NIVELES = {
     }),
   },
   12: {
+    tema: 'cueva',
     tipo: 'division', max: 9, par: 100000,
     comentario: 'Divisiones grandes y un vigilante tras las gafas.',
     mapa: nivelEstandar({
@@ -69,6 +78,7 @@ const NIVELES = {
     }),
   },
   13: {
+    tema: 'cueva',
     tipo: 'logica2', max: 12, par: 105000,
     comentario: 'Series lógicas avanzadas y dos vigilantes.',
     mapa: nivelEstandar({
@@ -80,6 +90,7 @@ const NIVELES = {
     }),
   },
   14: {
+    tema: 'cueva',
     tipo: 'operacion', max: 9, par: 105000,
     comentario: 'Operaciones de dos pasos, plataforma móvil sobre el hueco.',
     mapa: nivelEstandar({
@@ -91,6 +102,7 @@ const NIVELES = {
     }),
   },
   15: {
+    tema: 'cueva',
     tipo: 'reto2', max: 9, par: 110000,
     aviso: '🌈 ¡NUEVO! El arcoíris te deja VOLAR: mantén pulsado el salto',
     comentario: 'Aparece el arcoíris: hay que VOLAR sobre el barranco gigante.',
@@ -104,6 +116,7 @@ const NIVELES = {
     }),
   },
   16: {
+    tema: 'volcan',
     tipo: 'multiplicacion', max: 9, par: 110000,
     comentario: 'Tablas hasta el 9 con dos vigilantes.',
     mapa: nivelEstandar({
@@ -115,6 +128,7 @@ const NIVELES = {
     }),
   },
   17: {
+    tema: 'volcan',
     tipo: 'division', max: 9, par: 115000,
     comentario: 'Divisiones; el arcoíris permite alcanzar monedas altísimas.',
     mapa: nivelEstandar({
@@ -126,6 +140,7 @@ const NIVELES = {
     }),
   },
   18: {
+    tema: 'volcan',
     tipo: 'logica2', max: 12, par: 115000,
     comentario: 'Series difíciles con vigilante de entrada y de salida.',
     mapa: nivelEstandar({
@@ -136,6 +151,7 @@ const NIVELES = {
     }),
   },
   19: {
+    tema: 'volcan',
     tipo: 'operacion', max: 9, par: 120000,
     comentario: 'Dos pasos mentales, vuelo opcional y vigilante final.',
     mapa: nivelEstandar({
@@ -147,6 +163,7 @@ const NIVELES = {
     }),
   },
   20: {
+    tema: 'volcan',
     tipo: 'reto2', max: 9, par: 115000,
     aviso: '🎩 ¡NUEVO! El sombrero te teletransporta: toca a dónde quieres ir',
     comentario: 'Aparece el sombrero: un MURO infranqueable que solo se cruza con magia.',
@@ -164,6 +181,7 @@ const NIVELES = {
     })(),
   },
   21: {
+    tema: 'nieve',
     tipo: 'reto2', max: 9, par: 120000,
     comentario: 'La cámara del tesoro: sellada, solo se entra (y sale) por teletransporte.',
     mapa: (() => {
@@ -196,6 +214,7 @@ const NIVELES = {
     })(),
   },
   22: {
+    tema: 'nieve',
     tipo: 'division', max: 9, par: 120000,
     comentario: 'Alfombra de pinchos enorme: se cruza volando.',
     mapa: nivelEstandar({
@@ -207,6 +226,7 @@ const NIVELES = {
     }),
   },
   23: {
+    tema: 'nieve',
     tipo: 'logica2', max: 12, par: 125000,
     comentario: 'Dos vigilantes, dos pares de gafas.',
     mapa: nivelEstandar({
@@ -218,6 +238,7 @@ const NIVELES = {
     }),
   },
   24: {
+    tema: 'nieve',
     tipo: 'operacion', max: 9, par: 125000,
     comentario: 'Otro muro mágico y un vigilante guardando la meta.',
     mapa: (() => {
@@ -233,6 +254,7 @@ const NIVELES = {
     })(),
   },
   25: {
+    tema: 'nieve',
     tipo: 'reto2', max: 9, par: 150000,
     aviso: '🟢 ¡NUEVO! Toca el tubo para bucear. ¡Cuidado con los peces!',
     comentario: 'Los tubos llevan a una zona submarina con peces de pinchos.',
@@ -277,12 +299,163 @@ const NIVELES = {
       return z.filas()
     })(),
   },
+  // ----- MUNDO HIELO (26-28): el suelo helado resbala -----
+  26: {
+    tema: 'nieve',
+    tipo: 'mitadDoble', max: 12, par: 120000,
+    aviso: '🧊 ¡El suelo de hielo RESBALA! Frena con tiempo',
+    comentario: 'Primer nivel de hielo: derrapes, dobles y mitades.',
+    mapa: nivelEstandar({
+      hielo: [[24, 54], [59, 90]],
+      extras: [
+        [8, 41, 'G'], [8, 90, 'ooo'],
+        [9, 30, 'E'], [9, 50, 'V'], [9, 62, 'C'],
+      ],
+    }),
+  },
+  27: {
+    tema: 'nieve',
+    tipo: 'reto2', max: 9, par: 125000,
+    comentario: 'Hielo desde la salida y pinchos donde frenar mal.',
+    mapa: nivelEstandar({
+      hielo: [[0, 19], [23, 54]],
+      extras: [
+        [6, 13, 'o'], [7, 12, '###'],
+        [8, 84, 'G'],
+        [9, 28, 'E'], [9, 45, 'E'], [9, 62, 'C'], [9, 70, '^^'], [9, 90, 'V'],
+      ],
+    }),
+  },
+  28: {
+    tema: 'nieve',
+    tipo: 'reto3', max: 12, par: 130000,
+    comentario: 'Hielo final con puente que se cae y vuelo opcional.',
+    mapa: nivelEstandar({
+      hielo: [[59, 109]],
+      extras: [
+        [3, 45, 'ooo'],
+        [8, 20, 'R'], [8, 55, 'F.F'], [8, 86, 'G'],
+        [9, 30, 'E'], [9, 62, 'C'], [9, 92, 'V'],
+      ],
+    }),
+  },
+  // ----- MUNDO ESPACIO (29-31): gravedad lunar -----
+  29: {
+    tema: 'espacio', gravedadBaja: true,
+    tipo: 'mitadDoble', max: 12, par: 125000,
+    aviso: '🌌 ¡Gravedad lunar! Saltos gigantes y flotantes',
+    comentario: 'Primer nivel lunar: barrancos enormes que se cruzan flotando.',
+    mapa: nivelEstandar({
+      huecos: [[20, 27], [55, 64]],
+      extras: [
+        [3, 45, 'ooo'], [6, 56, 'o.o.o'],
+        [8, 84, 'G'],
+        [9, 40, 'E'], [9, 70, 'C'], [9, 90, 'V'],
+      ],
+    }),
+  },
+  30: {
+    tema: 'espacio', gravedadBaja: true,
+    tipo: 'reto3', max: 12, par: 130000,
+    comentario: 'Tres barrancos lunares y plataformas altísimas.',
+    mapa: nivelEstandar({
+      huecos: [[18, 28], [50, 60], [83, 89]],
+      extras: [
+        [4, 33, '###'], [3, 34, 'o'],
+        [2, 56, '###'], [1, 57, 'o'],
+        [8, 90, 'ooo'],
+        [9, 40, 'E'], [9, 70, 'C'], [9, 95, 'E'],
+      ],
+    }),
+  },
+  31: {
+    tema: 'espacio', gravedadBaja: true,
+    tipo: 'reto2', max: 9, par: 130000,
+    comentario: 'Vigilantes lunares y pinchos cerca de la meta.',
+    mapa: nivelEstandar({
+      huecos: [[20, 30]],
+      extras: [
+        [5, 56, 'ooo'],
+        [8, 38, 'G'],
+        [9, 45, 'V'], [9, 65, 'E'], [9, 70, 'C'], [9, 90, '^^^'],
+      ],
+    }),
+  },
+  // ----- MUNDO CASTILLO (32-35): lava mortal y plataformas que parpadean -----
+  32: {
+    tema: 'castillo',
+    tipo: 'reto3', max: 12, par: 135000,
+    aviso: '🔥 ¡La lava QUEMA! Cruza por las plataformas mágicas',
+    comentario: 'Primer foso de lava con puente de plataformas parpadeantes.',
+    mapa: nivelEstandar({
+      lava: [[40, 52]],
+      extras: [
+        [8, 41, 'b'], [8, 44, 'b'], [8, 47, 'b'], [8, 50, 'b'],
+        [6, 90, 'ooo'],
+        [8, 62, 'G'],
+        [9, 28, 'E'], [9, 66, 'C'], [9, 73, 'V'], [9, 90, '^^'],
+      ],
+    }),
+  },
+  33: {
+    tema: 'castillo',
+    tipo: 'reto3', max: 12, par: 140000,
+    comentario: 'Dos fosos de lava con puentes parpadeantes.',
+    mapa: nivelEstandar({
+      huecos: [[20, 22]],
+      lava: [[24, 33], [58, 70]],
+      extras: [
+        [8, 25, 'b'], [8, 28, 'b'], [8, 31, 'b'],
+        [8, 59, 'b'], [8, 62, 'b'], [8, 65, 'b'], [8, 68, 'b'],
+        [7, 45, 'ooo'],
+        [8, 82, 'G'],
+        [9, 45, 'E'], [9, 50, 'C'], [9, 88, 'V'],
+      ],
+    }),
+  },
+  34: {
+    tema: 'castillo',
+    tipo: 'reto3', max: 12, par: 140000,
+    comentario: 'Lava con puente mixto: tablones que caen y cristales que parpadean.',
+    mapa: nivelEstandar({
+      lava: [[40, 52]],
+      extras: [
+        [3, 75, 'ooo'],
+        [8, 20, 'R'],
+        [8, 41, 'F'], [8, 44, 'b'], [8, 47, 'F'], [8, 50, 'b'],
+        [8, 86, 'G'],
+        [9, 30, 'E'], [9, 62, 'C'], [9, 92, 'V'],
+      ],
+    }),
+  },
+  35: {
+    tema: 'castillo',
+    tipo: 'reto3', max: 12, par: 150000,
+    comentario: 'La antesala del jefe: dos fosos, dos vigilantes y un sombrero.',
+    mapa: nivelEstandar({
+      lava: [[24, 31], [55, 66]],
+      extras: [
+        [8, 18, 'H'],
+        [8, 25, 'b'], [8, 28, 'b'],
+        [8, 56, 'b'], [8, 59, 'b'], [8, 62, 'b'], [8, 65, 'b'],
+        [6, 90, 'ooo'],
+        [8, 41, 'G'], [9, 50, 'V'],
+        [8, 81, 'G'], [9, 90, 'V'],
+        [9, 15, 'E'], [9, 70, 'C'],
+      ],
+    }),
+  },
 }
 
 for (const [n, def] of Object.entries(NIVELES)) {
-  const numero = Number(n) // cada nivel tiene su personaje (11-25 con estilo propio)
+  // el personaje ya no depende del nivel (se elige en la tienda); el campo
+  // numero solo se usa como semilla visual, capado a los estilos existentes
+  const numero = Math.min(Number(n), 25)
   const colorUi = ((n - 1) % 10) + 1 // color del botón/HUD: cicla la paleta base
-  const aviso = def.aviso ? `\n  aviso: '${def.aviso}',` : ''
+  const aviso =
+    (def.tema ? `\n  tema: '${def.tema}',` : '') +
+    (def.gravedadBaja ? '\n  gravedadBaja: true,' : '') +
+    (def.aviso ? `\n  aviso: '${def.aviso}',` : '')
   const contenido = `import type { LevelData } from './types'
 
 // Nivel ${n}: ${def.comentario}

@@ -29,5 +29,6 @@ export const nivel25: LevelData = {
   ],
   puertas: { tipo: 'reto2', max: 9 },
   parMs: 150000,
+  tema: 'nieve',
   aviso: '🟢 ¡NUEVO! Toca el tubo para bucear. ¡Cuidado con los peces!',
 }

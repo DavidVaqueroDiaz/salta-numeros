@@ -7,6 +7,7 @@ import {
   Pez,
   PlataformaCaediza,
   PlataformaMovil,
+  PlataformaParpadeante,
   Tubo,
   Vigilante,
   type PlataformaPisable,
@@ -35,6 +36,8 @@ export interface Door {
 const SOLIDO = 1
 const PINCHO = 2
 const AGUA = 3
+const HIELO = 4 // sólido pero resbaladizo
+const LAVA = 5 // suelo mortal
 
 /** Nivel ya interpretado: rejilla de tiles + entidades (puertas, meta, spawn). */
 export class Level {
@@ -57,6 +60,7 @@ export class Level {
   readonly peces: Pez[] = []
   readonly tubos: Tubo[] = []
   readonly items: ItemPoder[] = []
+  readonly parpadeantes: PlataformaParpadeante[] = []
   jefe: Jefe | null = null
   xiana: Xiana | null = null
 
@@ -115,6 +119,12 @@ export class Level {
           this.items.push(new ItemPoder('arcoiris', c * TILE + 16, r * TILE + 16))
         } else if (ch === 'H') {
           this.items.push(new ItemPoder('sombrero', c * TILE + 16, r * TILE + 16))
+        } else if (ch === 'I') {
+          this.tiles[r * this.cols + c] = HIELO
+        } else if (ch === 'L') {
+          this.tiles[r * this.cols + c] = LAVA
+        } else if (ch === 'b') {
+          this.parpadeantes.push(new PlataformaParpadeante(c, r))
         }
       }
     }
@@ -156,7 +166,8 @@ export class Level {
 
   /** ¿Es sólida la celda (c, r)? Las puertas cerradas también lo son. */
   esSolido(c: number, r: number): boolean {
-    if (this.tileAt(c, r) === SOLIDO) return true
+    const t = this.tileAt(c, r)
+    if (t === SOLIDO || t === HIELO) return true
     return this.doors.some(
       (d) => !d.abierta && d.col === c && r >= d.filaTop && r <= d.filaBottom,
     )
@@ -170,9 +181,19 @@ export class Level {
     return this.tileAt(c, r) === AGUA
   }
 
-  /** Todo lo pisable desde arriba (móviles + caedizas). */
+  esHielo(c: number, r: number): boolean {
+    return this.tileAt(c, r) === HIELO
+  }
+
+  /** Pinchos o lava: tocarlo manda al respawn. */
+  esLetal(c: number, r: number): boolean {
+    const t = this.tileAt(c, r)
+    return t === PINCHO || t === LAVA
+  }
+
+  /** Todo lo pisable desde arriba (móviles + caedizas + parpadeantes). */
   get pisables(): PlataformaPisable[] {
-    return [...this.moviles, ...this.caedizas]
+    return [...this.moviles, ...this.caedizas, ...this.parpadeantes]
   }
 }
 
