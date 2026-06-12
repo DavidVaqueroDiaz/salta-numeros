@@ -117,8 +117,14 @@ export class Player {
         Math.floor((this.y + this.h + 2) / TILE),
       )
     if (sobreHielo) {
-      // acelera y frena despacio: el hielo resbala
-      this.vx += (dir * VELOCIDAD - this.vx) * Math.min(1, 2.4 * dt)
+      // patinaje: empujar responde razonable, pero al soltar sigues
+      // deslizando un buen trecho (fricción mínima)
+      const agarre = dir !== 0 ? 2.0 : 0.8
+      this.vx += (dir * VELOCIDAD - this.vx) * Math.min(1, agarre * dt)
+    } else if (!this.enSuelo && dir === 0) {
+      // en el aire sin pulsar nada conserva un poco de impulso (clave al
+      // salir despedido del hielo: no se corta en seco a mitad de salto)
+      this.vx *= Math.max(0, 1 - 4 * dt)
     } else {
       this.vx = dir * VELOCIDAD
     }

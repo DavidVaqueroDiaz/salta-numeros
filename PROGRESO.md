@@ -161,6 +161,17 @@ hacer `npm run build` y después `build-exe.ps1`.
       y 200 preguntas generadas sin fallos.
 - [ ] **Fase 3** — Despliegue HTTPS para la tablet (GitHub Pages o Netlify).
 
+## Ajustes de juego (2026-06-12, tarde)
+
+- **Gafas al principio de cada fase** (feedback Vaquero): todos los ítems
+  'G' están ahora en las columnas 14-19, lejos del vigilante; el niño las
+  guarda y decide cuándo activarlas al VER al monstruo. (Con el
+  inventario, el momento de recogida ya no importa.)
+- **Hielo mucho más resbaladizo**: fricción asimétrica en player.ts —
+  empujar agarra 2.0, soltar 0.8 → derrapada de ~5,6 tiles (antes ~1).
+  Además, en el aire sin pulsar nada se conserva el impulso brevemente
+  (decae 4/s) para que salir despedido del hielo no corte el salto.
+
 ## ✅ Gran expansión COMPLETADA (2026-06-12)
 
 Todo lo planificado abajo quedó hecho y verificado:
