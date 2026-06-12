@@ -161,6 +161,19 @@ hacer `npm run build` y después `build-exe.ps1`.
       y 200 preguntas generadas sin fallos.
 - [ ] **Fase 3** — Despliegue HTTPS para la tablet (GitHub Pages o Netlify).
 
+## 🌐 Publicado en GitHub Pages (2026-06-12)
+
+- Repo público: https://github.com/DavidVaqueroDiaz/salta-numeros
+- **URL del juego: https://davidvaquerodiaz.github.io/salta-numeros/**
+- Despliegue automático: cada `git push` a master reconstruye y publica
+  (workflow `.github/workflows/deploy.yml`). La tablet se actualiza sola.
+- Instalación en tablet: abrir la URL en Chrome → ⋮ → "Añadir a pantalla
+  de inicio". Tras la primera carga funciona offline.
+- El progreso de la tablet vive en su navegador (separado del pen/PC).
+- También está la carpeta portable **Desktop\Juego Joel** (exe + LEEME.txt)
+  para jugar en cualquier PC desde pen; para actualizarla basta
+  sobrescribir el exe (el progreso está en progreso-salta-numeros.json).
+
 ## Ajustes de juego (2026-06-12, tarde)
 
 - **Gafas al principio de cada fase** (feedback Vaquero): todos los ítems
