@@ -19,6 +19,8 @@ export const FORMAS: Record<number, [number, number][]> = {
   4: rect(2, 2),
   5: rect(1, 5),
   6: rect(2, 3),
+  // 7: cuerpo 2×3 (6 cubos de colores) + un 7º cubo "cabeza" morado arriba a un
+  // lado, con la cara y la melena arcoíris (como la referencia de Vaquero).
   7: [...rect(2, 3), [0, 3]],
   8: rect(2, 4),
   9: rect(3, 3),
@@ -126,8 +128,33 @@ export const COLOR_CUERPO: Record<number, string> = {
   10: '#f8f9fa',
 }
 
-const ARCOIRIS = ['#e63946', '#f77f00', '#ffd60a', '#52b788', '#4cc9f0', '#9d4edd', '#3a86ff']
 const TINTA = '#1d3557'
+
+// Personaje 7 con el aspecto exacto de la referencia (Numberblock arcoíris):
+// cuerpo 2×3 con un color por cubo, melena de 5 púas, ojos de borde dorado y
+// brazos/piernas morados.
+const C7 = {
+  cian: '#33bdec',
+  morado: '#7b3ec4',
+  amarillo: '#ffd400',
+  verde: '#5cbf3b',
+  rojo: '#e92e2a',
+  naranja: '#f7931e',
+  miembros: '#6e3aa8', // brazos y piernas morados
+  ojos: '#f2b705', // borde dorado de los ojos
+}
+/** Color de cada cubo del 7, por clave "col,fila" (fila 0 = abajo). */
+const COLORES_7: Record<string, string> = {
+  '0,0': C7.rojo,
+  '1,0': C7.naranja,
+  '0,1': C7.amarillo,
+  '1,1': C7.verde,
+  '0,2': C7.cian,
+  '1,2': C7.morado,
+  '0,3': C7.morado, // cabeza morada (arriba a un lado)
+}
+/** Colores de las 5 púas de la melena (izquierda → derecha). */
+const MELENA_7 = ['#e92e2a', '#f7931e', '#ffd400', '#5cbf3b', '#33bdec']
 
 export function oscurecer(hex: string, factor: number): string {
   const n = parseInt(hex.slice(1), 16)
@@ -163,11 +190,14 @@ export function dibujarPersonaje(
   const u = bs / 16 // unidad para rasgos, relativa al tamaño de bloque
 
   // --- Piernas y brazos (finos, oscuros) ---
-  ctx.strokeStyle = estilo
-    ? oscurecer(estilo.borde, 0.85)
-    : esBlanco
-      ? '#c1121f'
-      : oscurecer(colorBase, 0.55)
+  ctx.strokeStyle =
+    numero === 7
+      ? C7.miembros
+      : estilo
+        ? oscurecer(estilo.borde, 0.85)
+        : esBlanco
+          ? '#c1121f'
+          : oscurecer(colorBase, 0.55)
   ctx.lineWidth = Math.max(2, 2.4 * u)
   ctx.lineCap = 'round'
   const piernaAlt = Math.max(3, 3.5 * u)
@@ -191,14 +221,16 @@ export function dibujarPersonaje(
   for (const [c, r] of forma) {
     const bx = baseX + c * bs
     const by = piesY - (r + 1) * bs
-    ctx.fillStyle =
+    const fill =
       numero === 7
-        ? ARCOIRIS[r % ARCOIRIS.length]
+        ? (COLORES_7[`${c},${r}`] ?? C7.cian)
         : (estilo?.acentos?.[`${c},${r}`] ?? colorBase)
+    ctx.fillStyle = fill
     ctx.beginPath()
     ctx.roundRect(bx + 0.5, by + 0.5, bs - 1, bs - 1, Math.max(1.5, 2 * u))
     ctx.fill()
-    ctx.strokeStyle = borde
+    // el 7 lleva el borde a juego con cada cubo; el resto, su borde común
+    ctx.strokeStyle = numero === 7 ? oscurecer(fill, 0.75) : borde
     ctx.lineWidth = Math.max(1, 1.3 * u)
     ctx.stroke()
     // puntos de dado del 6
@@ -218,9 +250,11 @@ export function dibujarPersonaje(
   const caraCx = baseX + ((cMin + cMax + 1) * bs) / 2
   const caraTop = piesY - rows * bs
   const ojoY = caraTop + bs * 0.45
-  const sep = Math.max(4, (cMax - cMin + 1) * bs * 0.22)
-  const rOjo = Math.max(2.6, 3.2 * u)
-  const rPupila = Math.max(1.3, 1.6 * u)
+  // el 7 tiene la cara en un solo cubo (la cabeza): ojos grandes y juntos
+  const sep =
+    numero === 7 ? bs * 0.3 : Math.max(4, (cMax - cMin + 1) * bs * 0.22)
+  const rOjo = Math.max(2.6, (numero === 7 ? 3.5 : 3.2) * u)
+  const rPupila = Math.max(1.3, (numero === 7 ? 1.8 : 1.6) * u)
   const guino = mirando * 1.2 * u
   const colorGafas =
     numero === 10
@@ -233,14 +267,15 @@ export function dibujarPersonaje(
             ? '#3a86ff'
             : null
 
+  const rimOjo = colorGafas ?? (numero === 7 ? C7.ojos : null)
   const dibujarOjoRedondo = (x: number): void => {
     ctx.fillStyle = '#ffffff'
     ctx.beginPath()
     ctx.arc(x, ojoY, rOjo, 0, Math.PI * 2)
     ctx.fill()
-    if (colorGafas) {
-      ctx.strokeStyle = colorGafas
-      ctx.lineWidth = Math.max(1.2, 1.6 * u)
+    if (rimOjo) {
+      ctx.strokeStyle = rimOjo
+      ctx.lineWidth = Math.max(1.2, (numero === 7 ? 2 : 1.6) * u)
       ctx.stroke()
     }
     ctx.fillStyle = TINTA
@@ -321,14 +356,18 @@ export function dibujarPersonaje(
     }
   }
   if (numero === 7) {
-    for (let i = 0; i < 4; i++) {
-      ctx.strokeStyle = ARCOIRIS[i + 1]
-      ctx.lineWidth = Math.max(1.4, 1.8 * u)
+    // melena de 5 púas arcoíris saliendo en abanico desde lo alto de la cabeza
+    const n = MELENA_7.length
+    ctx.lineCap = 'round'
+    MELENA_7.forEach((color, i) => {
+      const t = i - (n - 1) / 2 // -2 … 2
+      ctx.strokeStyle = color
+      ctx.lineWidth = Math.max(1.8, 2.6 * u)
       ctx.beginPath()
-      ctx.moveTo(caraCx - 2 * u + i * 1.6 * u, caraTop)
-      ctx.lineTo(caraCx - 4 * u + i * 2.6 * u, caraTop - 4.5 * u)
+      ctx.moveTo(caraCx + t * 1.7 * u, caraTop + 1.5 * u)
+      ctx.lineTo(caraCx + t * 3.4 * u, caraTop - 6.5 * u)
       ctx.stroke()
-    }
+    })
   }
 
   // chistera morada del 20

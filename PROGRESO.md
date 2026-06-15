@@ -350,6 +350,21 @@ colocados solos en suelo seguro sin tocar los mapas (`Level.generarItemsEspecial
   a 4 en Difícil; estrella atropella sin morir; jefe = 5 vidas en Difícil.
   `npm run build` y `check-levels.mjs` en verde.
 
+## Personaje 7 rediseñado como la referencia (2026-06-15)
+
+El personaje 7 de la tienda (precio 35) se rediseñó para clavarlo a la imagen
+de referencia de Vaquero (Numberblock arcoíris): **7 cubos** = cuerpo **2×3 con
+un color exacto por cubo** (abajo rojo `#e92e2a` / naranja `#f7931e`, medio
+amarillo `#ffd400` / verde `#5cbf3b`, arriba cian `#33bdec` / morado `#7b3ec4`)
++ una **cabeza morada arriba a un lado** (cubo `[0,3]`) con la cara y la melena.
+Detalles: **melena de 5 púas** arcoíris en abanico, **ojos grandes con borde
+dorado** `#f2b705` y **brazos/piernas morados** `#6e3aa8`. En `character.ts`:
+`FORMAS[7] = [...rect(2,3), [0,3]]`; se quita el coloreado por filas (`ARCOIRIS`)
+y se usa el mapa `COLORES_7` (incluye la cabeza `0,3` morada); ojos del 7 más
+grandes y juntos (caben en el cubo de la cabeza); brazos, borde de ojos y melena
+con casos propios del 7. Verificado por muestreo de píxeles del mini-canvas de
+la tienda (los 6 colores del cuerpo coinciden) y captura ampliada.
+
 ## Ideas en la nevera (decididas NO ahora)
 
 - Cinemática de cierre + contador total de estrellas con premio al 100 %.
