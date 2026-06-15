@@ -31,20 +31,28 @@ export class Player {
   volarT = 0
   /** usos del teletransporte (sombrero rojo) */
   teleUsos = 0
+  /** segundos restantes de estrella invencible (atropella bichos) */
+  estrellaT = 0
   /** evita rebotar entre tubos al instante */
   tuboCooldownT = 0
   /** ¿está nadando ahora mismo? (lo rellena update) */
   enAgua = false
-  /** ítems recogidos sin usar: se activan tocando su icono en pantalla */
-  readonly inventario = { gafas: 0, arcoiris: 0, sombrero: 0 }
+  /**
+   * Ítems recogidos sin usar: se activan tocando su icono en pantalla.
+   * `cubo` cuenta los lanzamientos de cubo de Rubik disponibles (3 por ítem).
+   */
+  readonly inventario = { gafas: 0, arcoiris: 0, sombrero: 0, cubo: 0, estrella: 0 }
 
   limpiarPoderes(): void {
     this.invisibleT = 0
     this.volarT = 0
     this.teleUsos = 0
+    this.estrellaT = 0
     this.inventario.gafas = 0
     this.inventario.arcoiris = 0
     this.inventario.sombrero = 0
+    this.inventario.cubo = 0
+    this.inventario.estrella = 0
   }
   private plataforma: PlataformaPisable | null = null
   private puntoRespawn = { x: 0, y: 0 }
@@ -80,6 +88,7 @@ export class Player {
     // --- Temporizadores de poderes ---
     this.invisibleT = Math.max(0, this.invisibleT - dt)
     this.volarT = Math.max(0, this.volarT - dt)
+    this.estrellaT = Math.max(0, this.estrellaT - dt)
     this.tuboCooldownT = Math.max(0, this.tuboCooldownT - dt)
     this.enAgua = level.esAgua(
       Math.floor((this.x + this.w / 2) / TILE),

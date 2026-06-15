@@ -12,6 +12,7 @@ export type TipoPuerta =
   | 'reto2' // mezcla difícil: ×/÷ hasta el 9, logica2 y operacion
   | 'mitadDoble' // ¿el doble de 7? ¿la mitad de 16?
   | 'reto3' // lo más difícil: ×/÷ hasta el 12, mitadDoble, operacion, logica2
+  | 'problema' // problema de varios pasos (modo difícil): hay que hacer cuentas
 
 export interface DoorSpec {
   tipo: TipoPuerta

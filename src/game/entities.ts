@@ -2,6 +2,7 @@
 // puntos de control. Se crean desde caracteres del mapa ASCII (ver types.ts).
 import { TILE, type Rect } from './level'
 import type { Level } from './level'
+import { paramsDificultad } from './dificultad'
 
 /** Cosas sobre las que se puede aterrizar (solo desde arriba). */
 export interface PlataformaPisable {
@@ -52,7 +53,7 @@ export class Enemigo {
       this.squashT = Math.max(0, this.squashT - dt)
       return
     }
-    const nx = this.x + this.dir * this.vel * dt
+    const nx = this.x + this.dir * this.vel * paramsDificultad().velMul * dt
     const frente = Math.floor((this.dir > 0 ? nx + this.w : nx) / TILE)
     const filaCuerpo = Math.floor((this.y + this.h / 2) / TILE)
     const filaSuelo = Math.floor((this.y + this.h + 2) / TILE)
@@ -161,7 +162,69 @@ export class PlataformaCaediza implements PlataformaPisable {
   }
 }
 
-export type TipoPoder = 'gafas' | 'arcoiris' | 'sombrero'
+export type TipoPoder = 'gafas' | 'arcoiris' | 'sombrero' | 'cubo' | 'estrella'
+
+/**
+ * Cubo de Rubik lanzado: rueda hacia delante por el suelo. Mata hasta 2 bichos
+ * cercanos o le quita una vida al jefe; la cuenta de muertes la lleva main.ts.
+ * Se apaga al chocar con una pared, salirse del mapa o agotar su tiempo.
+ */
+export class CuboVolando {
+  readonly w = 22
+  readonly h = 22
+  x: number
+  y: number
+  vy = 0
+  /** giro para dibujarlo rodando */
+  giro = 0
+  /** bichos que ya ha matado (máximo 2) */
+  kills = 0
+  viva = true
+  private vidaT = 2.6 // segundos que rueda antes de apagarse
+
+  constructor(
+    cx: number,
+    cy: number,
+    private readonly dir: 1 | -1,
+  ) {
+    this.x = cx - this.w / 2
+    this.y = cy - this.h / 2
+  }
+
+  rect(): Rect {
+    return { x: this.x, y: this.y, w: this.w, h: this.h }
+  }
+
+  update(dt: number, level: Level): void {
+    const VEL = 300
+    this.vidaT -= dt
+    if (this.vidaT <= 0) {
+      this.viva = false
+      return
+    }
+    this.giro += this.dir * dt * 9
+
+    // gravedad para que caiga al suelo y ruede pegado a él
+    this.vy = Math.min(this.vy + 1500 * dt, 700)
+    this.y += this.vy * dt
+    const filaPies = Math.floor((this.y + this.h) / TILE)
+    const cCentro = Math.floor((this.x + this.w / 2) / TILE)
+    if (this.vy >= 0 && level.esSolido(cCentro, filaPies)) {
+      this.y = filaPies * TILE - this.h
+      this.vy = 0
+    }
+
+    // avance horizontal; se apaga si choca con una pared o sale del mapa
+    const nx = this.x + this.dir * VEL * dt
+    const frente = Math.floor((this.dir > 0 ? nx + this.w : nx) / TILE)
+    const filaCuerpo = Math.floor((this.y + this.h / 2) / TILE)
+    if (level.esSolido(frente, filaCuerpo) || nx < 0 || nx + this.w > level.widthPx) {
+      this.viva = false
+      return
+    }
+    this.x = nx
+  }
+}
 
 /** Ítem de poder: gafas (invisible), arcoíris (volar), sombrero (teletransporte). */
 export class ItemPoder {
@@ -221,7 +284,7 @@ export class Vigilante {
     if (!this.enfadado) return
     // carga hacia el jugador sin tirarse por los barrancos
     this.dir = jugador.x + jugador.w / 2 < this.x + this.w / 2 ? -1 : 1
-    const nx = this.x + this.dir * this.velCarga * dt
+    const nx = this.x + this.dir * this.velCarga * paramsDificultad().velMul * dt
     const frente = Math.floor((this.dir > 0 ? nx + this.w : nx) / TILE)
     const filaCuerpo = Math.floor((this.y + this.h / 2) / TILE)
     const filaSuelo = Math.floor((this.y + this.h + 2) / TILE)
@@ -256,7 +319,7 @@ export class Pez {
 
   update(dt: number, level: Level): void {
     this.t += dt
-    const nx = this.x + this.dir * this.vel * dt
+    const nx = this.x + this.dir * this.vel * paramsDificultad().velMul * dt
     const frente = Math.floor((this.dir > 0 ? nx + this.w : nx) / TILE)
     const fila = Math.floor((this.y0 + this.h / 2) / TILE)
     // se da la vuelta si se acaba el agua o hay pared

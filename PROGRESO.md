@@ -279,6 +279,77 @@ PENDIENTE (en orden previsto):
    entidades); hueco máximo mayor si `gravedadBaja`.
 10. Verificar con __debug.step, build, exe, PROGRESO, commit.
 
+## Modos de dificultad: Fácil / Medio / Difícil (2026-06-15)
+
+Tres modos elegibles en el menú (selector arriba: 😀 Fácil / 🙂 Medio /
+😬 Difícil). Implementados como **modificador global** que se lee al construir
+el nivel y al actualizar enemigos/jefe — sin tocar los 36 mapas. **El modo
+Fácil queda byte a byte como el juego original** (Joel no pierde nada).
+
+- `src/game/dificultad.ts`: tipo `Dificultad`, tabla `PARAMS` por modo
+  (velMul, bichosFactor, vidas, jefeAgil, jefeSaltoCada, jefeTeleCada, mates),
+  y get/set persistente en localStorage `salta-numeros-dificultad`.
+- **Progreso SEPARADO por modo** (decisión de Vaquero): Fácil sigue en la clave
+  de siempre `salta-numeros-v1` (intacta); Medio y Difícil estrenan
+  `salta-numeros-medio-v1` y `salta-numeros-dificil-v1`. `progress.ts` es
+  ahora mode-aware (`CLAVES_PROGRESO`, `cargarProgreso(modo)`,
+  `guardarResultado(...,modo)`). El menú pinta el progreso/desbloqueo del modo
+  elegido. `sync.ts` vuelca y fusiona también las dos claves nuevas + el modo.
+- **Medio**: más bichos (enemigos extra colocados solos en suelo firme con
+  hueco, lejos de salida/meta/puertas/checkpoints — `Level.generarBichosExtra`,
+  ~1,2 por cada 10 columnas), mates un poco más altas (números mayores), jefe
+  ágil. Sin vidas (infinitas, como Fácil).
+- **Difícil**: mismos bichos que Medio pero **más rápidos** (velMul 1,55,
+  aplicado en `entities.ts` a Enemigo/Vigilante/Pez y al jefe), **3 vidas por
+  nivel** (HUD de corazones `#hud-lives`): morir con vidas reaparece en el
+  punto de control; al perder las 3 se reinicia la fase entera desde el
+  principio (ignora checkpoints) y se rellenan las vidas (`quitarVida` /
+  `morir` en main). Mates: **problemas de varios pasos** (`tipo 'problema'` en
+  questions.ts: grupos, reparto, compra, sumas de 3 pasos, bolsas−comidas,
+  diferencia — de coger papel) ~60 % de las puertas; el resto, como Medio.
+  **Penalización por descarte**: si acierta tras fallar 2 veces (la última
+  opción que queda), pierde una vida (puertas normales y reto del jefe).
+- **Jefe ágil** (Medio y Difícil, pedido de Vaquero): el Comecubos ahora tiene
+  gravedad y **salta** (~100 px) y **se teletransporta** a otro punto de su
+  zona con suelo (`Jefe.buscarHueco`). En Fácil no salta ni cae (idéntico).
+- Verificado en preview (1280×720): selector visible; Fácil nivel 1 = 0
+  enemigos extra y sin HUD de vidas; Difícil nivel 1 = 7 enemigos + 3
+  corazones + reinicio al morir 3 veces; problemas multipaso con respuesta
+  correcta entre las opciones; jefe salta y teletransporta sin errores.
+  `npm run build` (typecheck + build) y `check-levels.mjs` en verde.
+- PENDIENTE manual de Vaquero: regenerar el exe (`build-exe.ps1`) y/o
+  `git push` para que la tablet (GitHub Pages) reciba los modos nuevos.
+
+## Armas e ítems de ayuda: cubo de Rubik y estrella (2026-06-15)
+
+Dos ítems nuevos **en todos los modos** (también Fácil, para ayudar a Joel),
+colocados solos en suelo seguro sin tocar los mapas (`Level.generarItemsEspeciales`
+/ `colocarItem`, reutilizan `candidatosSuelo`):
+
+- **🎲 Cubo de Rubik (arma)** en las **fases impares** (y 3 en la arena del
+  jefe). Cada ítem da **3 lanzamientos** (`inventario.cubo += 3`). Icono
+  izquierdo / tecla **4**: lanza un `CuboVolando` (entities.ts) que **rueda
+  hacia delante** (gravedad + avance en `player.mirando`), **mata hasta 2
+  bichos** cercanos (enemigos y vigilantes) o **quita una vida al jefe**
+  (`jefe.golpear()` directo, sin mates); se apaga al chocar con pared, salir
+  del mapa o a los 2,6 s. La gestión de muertes/daño está en el `update` de
+  main.ts; se limpian al morir.
+- **🌟 Estrella invencible** en las **fases pares** (2, 4, 6, 8…). Icono / tecla
+  **5**: `player.estrellaT = 9` s. Mientras dura, **atropella** a enemigos,
+  vigilantes (y es inmune a peces) **sin recibir daño**; con el **jefe** eres
+  inmune a sus bolas de fuego y a su contacto, **pero la estrella no le hace
+  daño** (hay que seguir usando pisotón→mates o cubos). Aura dorada parpadeante
+  alrededor del personaje (renderer).
+- **Jefe final con 5 vidas en Difícil** (`jefeVidas` en `dificultad.ts`; Fácil y
+  Medio siguen con 3), para compensar que ahora se le puede dañar con cubos.
+- HUD de poderes ampliado a 5 iconos (1🕶️ 2🌈 3🎩 4🎲 5🌟); tutoriales de
+  primera vez para cubo y estrella (screens.ts). Dibujo de cubo de Rubik 3×3 y
+  de estrella de 5 puntas en renderer.ts (`dibujarCubo`, `dibujarEstrella`).
+- Verificado en preview: cubo impares / estrella pares / arena del jefe con
+  cubos; lanzar gasta 1 de 3 y mata al enemigo al rodar; cubo baja al jefe de 5
+  a 4 en Difícil; estrella atropella sin morir; jefe = 5 vidas en Difícil.
+  `npm run build` y `check-levels.mjs` en verde.
+
 ## Ideas en la nevera (decididas NO ahora)
 
 - Cinemática de cierre + contador total de estrellas con premio al 100 %.

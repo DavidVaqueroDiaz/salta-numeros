@@ -1,6 +1,7 @@
 import type { DoorSpec, LevelData } from '../levels/types'
 import {
   Checkpoint,
+  CuboVolando,
   Enemigo,
   ItemPoder,
   Moneda,
@@ -13,6 +14,7 @@ import {
   type PlataformaPisable,
 } from './entities'
 import { Jefe, Xiana } from './boss'
+import { paramsDificultad } from './dificultad'
 
 export const TILE = 32
 
@@ -60,6 +62,7 @@ export class Level {
   readonly peces: Pez[] = []
   readonly tubos: Tubo[] = []
   readonly items: ItemPoder[] = []
+  readonly cubosVolando: CuboVolando[] = []
   readonly parpadeantes: PlataformaParpadeante[] = []
   jefe: Jefe | null = null
   xiana: Xiana | null = null
@@ -133,6 +136,105 @@ export class Level {
     for (let i = 0; i + 1 < this.tubos.length; i += 2) {
       this.tubos[i].par = this.tubos[i + 1]
       this.tubos[i + 1].par = this.tubos[i]
+    }
+
+    this.generarBichosExtra()
+    this.generarItemsEspeciales()
+  }
+
+  /**
+   * Celdas de suelo firme con dos huecos encima y los lados libres (sitios
+   * cómodos para soltar un bicho o un ítem). Una por columna, la más alta.
+   */
+  private candidatosSuelo(): { c: number; r: number }[] {
+    const candidatos: { c: number; r: number }[] = []
+    for (let c = 3; c < this.cols - 3; c++) {
+      for (let r = 2; r < this.rows - 1; r++) {
+        const sueloAbajo = this.tileAt(c, r + 1)
+        const firme = sueloAbajo === SOLIDO || sueloAbajo === HIELO
+        if (
+          firme &&
+          this.tileAt(c, r) === 0 &&
+          this.tileAt(c, r - 1) === 0 &&
+          this.tileAt(c - 1, r) === 0 &&
+          this.tileAt(c + 1, r) === 0
+        ) {
+          candidatos.push({ c, r })
+          break
+        }
+      }
+    }
+    return candidatos
+  }
+
+  /** Columnas ocupadas que conviene esquivar al colocar cosas nuevas. */
+  private columnasOcupadas(): number[] {
+    return [
+      Math.round(this.spawn.x / TILE),
+      this.goal.w > 0 ? Math.round(this.goal.x / TILE) : -99,
+      ...this.doors.map((d) => d.col),
+      ...this.checkpoints.map((ch) => Math.round(ch.x / TILE)),
+    ]
+  }
+
+  /**
+   * En Medio/Difícil añade bichos extra sin tocar los mapas: reparte enemigos
+   * por sitios de suelo firme, lejos de la salida, la meta, las puertas y de
+   * otros enemigos.
+   */
+  private generarBichosExtra(): void {
+    const factor = paramsDificultad().bichosFactor
+    if (factor <= 0) return
+    const objetivo = Math.round((this.cols / 10) * factor)
+    if (objetivo <= 0) return
+
+    const evitar = [
+      ...this.columnasOcupadas(),
+      ...this.enemigos.map((e) => Math.round(e.x / TILE)),
+      ...this.vigilantes.map((v) => Math.round(v.x / TILE)),
+    ]
+    const lejos = (c: number): boolean => evitar.every((x) => Math.abs(x - c) >= 3)
+    const buenos = this.candidatosSuelo().filter((k) => lejos(k.c))
+    if (buenos.length === 0) return
+
+    const paso = Math.max(1, Math.floor(buenos.length / objetivo))
+    let puestos = 0
+    for (let i = 0; i < buenos.length && puestos < objetivo; i += paso) {
+      const { c, r } = buenos[i]
+      this.enemigos.push(new Enemigo(c, r))
+      puestos++
+    }
+  }
+
+  /**
+   * Ítems de ayuda (en todos los modos, sin tocar los mapas):
+   * - una ESTRELLA invencible en las fases pares (2, 4, 6, 8…),
+   * - un CUBO de Rubik (arma) en las fases impares,
+   * - y varios cubos en la arena del jefe para usarlos contra él.
+   */
+  private generarItemsEspeciales(): void {
+    const n = this.data.numero
+    if (n % 2 === 0) this.colocarItem('estrella', 1)
+    else this.colocarItem('cubo', 1)
+    if (this.jefe) this.colocarItem('cubo', 3)
+  }
+
+  /** Coloca `cantidad` ítems del tipo dado en suelo seguro, bien repartidos. */
+  private colocarItem(tipo: 'cubo' | 'estrella', cantidad: number): void {
+    const evitar = [
+      ...this.columnasOcupadas(),
+      ...this.items.map((i) => Math.round((i.cx - 16) / TILE)),
+    ]
+    const lejos = (c: number): boolean => evitar.every((x) => Math.abs(x - c) >= 2)
+    const buenos = this.candidatosSuelo().filter((k) => lejos(k.c))
+    if (buenos.length === 0) return
+
+    const paso = Math.max(1, Math.floor(buenos.length / cantidad))
+    let puestos = 0
+    for (let i = 0; i < buenos.length && puestos < cantidad; i += paso) {
+      const { c, r } = buenos[i]
+      this.items.push(new ItemPoder(tipo, c * TILE + 16, r * TILE + 16))
+      puestos++
     }
   }
 

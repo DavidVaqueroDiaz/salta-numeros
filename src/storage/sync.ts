@@ -4,6 +4,9 @@
 
 const CLAVES = [
   'salta-numeros-v1',
+  'salta-numeros-medio-v1',
+  'salta-numeros-dificil-v1',
+  'salta-numeros-dificultad',
   'salta-numeros-ajustes',
   'salta-numeros-tutoriales',
   'salta-numeros-monedero',
@@ -87,11 +90,15 @@ export async function cargarDesdeFichero(): Promise<boolean> {
     const r = await fetch('/api/progreso')
     if (!r.ok) return false
     const datos = (await r.json()) as Volcado
-    if (datos['salta-numeros-v1']) {
-      localStorage.setItem(
-        'salta-numeros-v1',
-        fusionarNiveles(localStorage.getItem('salta-numeros-v1'), datos['salta-numeros-v1']),
-      )
+    // Progreso por niveles de cada modo: nos quedamos con lo mejor de ambos lados
+    for (const clave of [
+      'salta-numeros-v1',
+      'salta-numeros-medio-v1',
+      'salta-numeros-dificil-v1',
+    ] as const) {
+      if (datos[clave]) {
+        localStorage.setItem(clave, fusionarNiveles(localStorage.getItem(clave), datos[clave]))
+      }
     }
     const monederoFichero = Number(datos['salta-numeros-monedero'] ?? 0)
     const monederoLocal = Number(localStorage.getItem('salta-numeros-monedero') ?? 0)
@@ -109,8 +116,12 @@ export async function cargarDesdeFichero(): Promise<boolean> {
         JSON.stringify({ comprados, equipado: f.equipado ?? l.equipado ?? 1 }),
       )
     }
-    // ajustes y tutoriales: el navegador manda si ya tiene algo
-    for (const clave of ['salta-numeros-ajustes', 'salta-numeros-tutoriales'] as const) {
+    // ajustes, tutoriales y modo elegido: el navegador manda si ya tiene algo
+    for (const clave of [
+      'salta-numeros-ajustes',
+      'salta-numeros-tutoriales',
+      'salta-numeros-dificultad',
+    ] as const) {
       if (datos[clave] && localStorage.getItem(clave) === null) {
         localStorage.setItem(clave, datos[clave])
       }

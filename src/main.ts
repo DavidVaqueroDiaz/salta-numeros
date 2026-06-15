@@ -4,11 +4,13 @@ import { startLoop } from './engine/loop'
 import { resetInput, setupInput } from './engine/input'
 import { Renderer } from './engine/renderer'
 import { Level, TILE, seSolapan, type Door } from './game/level'
+import { CuboVolando } from './game/entities'
 import { Player } from './game/player'
 import { sonido } from './game/sound'
 import { NIVELES, NIVEL_FINAL } from './levels/index'
-import { generarPregunta } from './math/questions'
+import { generarPregunta, puertaAjustada } from './math/questions'
 import { abrirPuertaMatematica } from './ui/mathDoor'
+import { dificultadActual, paramsDificultad } from './game/dificultad'
 import {
   aplicarAjustes,
   formatearTiempo,
@@ -38,6 +40,8 @@ let level: Level | null = null
 let nivelActual = 1
 let tiempoMs = 0
 let erroresPuertas = 0
+let vidas = Infinity // vidas restantes en esta fase (Infinity = modo sin vidas)
+let vidasMax = 0 // vidas con las que empieza la fase (para pintar los corazones)
 const player = new Player()
 
 const canvasJuego = document.getElementById('game') as HTMLCanvasElement
@@ -53,6 +57,7 @@ const hud = document.getElementById('hud')!
 const hudLevel = document.getElementById('hud-level')!
 const hudTimer = document.getElementById('hud-timer')!
 const hudCoins = document.getElementById('hud-coins')!
+const hudLives = document.getElementById('hud-lives')!
 const controles = document.getElementById('controls')!
 document.getElementById('hud-exit')!.addEventListener('click', irAlMenu)
 
@@ -61,6 +66,17 @@ function actualizarMonedasHud(): void {
   const recogidas = level.monedas.filter((m) => m.recogida).length
   hudCoins.textContent = `● ${recogidas}/${level.monedas.length}`
   hudCoins.classList.toggle('hidden', level.monedas.length === 0)
+}
+
+/** Pinta los corazones de vidas (solo en modos con vidas, p. ej. Difícil). */
+function actualizarVidasHud(): void {
+  if (vidas === Infinity) {
+    hudLives.classList.add('hidden')
+    return
+  }
+  const llenos = Math.max(0, vidas)
+  hudLives.textContent = '❤️'.repeat(llenos) + '🖤'.repeat(Math.max(0, vidasMax - llenos))
+  hudLives.classList.remove('hidden')
 }
 
 let toastTimer = 0
@@ -82,10 +98,30 @@ function irAlMenu(): void {
   mostrarMenu(empezarNivel)
 }
 
+/**
+ * En móvil/tablet abierto desde el navegador, pide pantalla completa para
+ * ocultar la barra de direcciones (instalada como app ya va sin barra).
+ */
+function pantallaCompletaSiTactil(): void {
+  const esTactil = window.matchMedia('(pointer: coarse)').matches
+  const instalada = window.matchMedia(
+    '(display-mode: fullscreen), (display-mode: standalone)',
+  ).matches
+  if (!esTactil || instalada || document.fullscreenElement) return
+  document.documentElement
+    .requestFullscreen?.({ navigationUI: 'hide' })
+    .catch(() => {})
+}
+
 function empezarNivel(n: number): void {
   const data = NIVELES[n]
   if (!data) return
+  pantallaCompletaSiTactil() // venimos de un toque: el navegador lo permite
   nivelActual = n
+  // el modo de dificultad ya está fijado desde el menú; Level lo lee al nacer
+  const vidasModo = paramsDificultad().vidas
+  vidasMax = vidasModo ?? 0
+  vidas = vidasModo ?? Infinity
   level = new Level(data)
   personajeEquipado = cargarPersonajes().equipado
   player.empezar(level)
@@ -98,6 +134,7 @@ function empezarNivel(n: number): void {
   hud.classList.remove('hidden')
   controles.classList.remove('hidden')
   actualizarMonedasHud()
+  actualizarVidasHud()
   if (data.aviso) avisar(data.aviso)
   estado = 'jugando'
 }
@@ -118,10 +155,18 @@ function comprobarPuertas(): void {
     if (d.abierta || !seSolapan(cerca, zona)) continue
     estado = 'puerta' // el cronómetro se pausa: las mates se piensan con calma
     resetInput()
-    abrirPuertaMatematica(generarPregunta(d.spec), (res) => {
+    const spec = puertaAjustada(d.spec, paramsDificultad().mates)
+    abrirPuertaMatematica(generarPregunta(spec), (res) => {
       erroresPuertas += res.errores
-      if (res.acertada) d.abierta = true
-      else retroceder(d)
+      if (res.acertada) {
+        d.abierta = true
+        // En Difícil: acertar tras fallar 2 veces (por descarte) cuesta una vida
+        if (vidas !== Infinity && res.errores >= 2) {
+          if (!quitarVida()) avisar('😅 Acertaste por descarte: ¡pierdes una vida! ❤️')
+        }
+      } else {
+        retroceder(d)
+      }
       estado = 'jugando'
     })
     return
@@ -151,6 +196,7 @@ function terminarNivel(): void {
     ms,
     estrellas,
     monedas,
+    dificultadActual(),
   )
   añadirMonedas(monedas) // a la hucha (para la tienda de personajes)
   void guardarEnFichero() // copia en el fichero del lanzador
@@ -173,15 +219,35 @@ function terminarNivel(): void {
   )
 }
 
+/**
+ * Resta una vida en los modos que las usan (Difícil). Si se acaban, reinicia
+ * la fase entera desde el principio (ignorando los puntos de control) y
+ * devuelve true. En los modos sin vidas no hace nada y devuelve false.
+ */
+function quitarVida(): boolean {
+  if (vidas === Infinity) return false
+  vidas--
+  actualizarVidasHud()
+  if (vidas <= 0) {
+    const n = nivelActual
+    empezarNivel(n) // vuelve al inicio de la fase, con las vidas otra vez llenas
+    avisar('💀 ¡Te quedaste sin vidas! Empiezas la fase otra vez')
+    return true
+  }
+  return false
+}
+
 function morir(): void {
   if (!level) return
   sonido.golpe()
-  player.respawn()
+  if (quitarVida()) return // sin vidas: ya se reinició toda la fase
+  player.respawn() // con vidas restantes: reaparece en el último punto de control
   player.limpiarPoderes()
   // todo lo reintentable vuelve a su sitio
   level.caedizas.forEach((p) => p.reset())
   level.items.forEach((i) => (i.recogido = false))
   level.vigilantes.forEach((v) => (v.enfadado = false))
+  level.cubosVolando.length = 0
   if (level.jefe) level.jefe.bolas.length = 0
 }
 
@@ -191,6 +257,8 @@ const botonPoder = {
   gafas: document.getElementById('poder-gafas')!,
   arcoiris: document.getElementById('poder-arcoiris')!,
   sombrero: document.getElementById('poder-sombrero')!,
+  cubo: document.getElementById('poder-cubo')!,
+  estrella: document.getElementById('poder-estrella')!,
 }
 
 botonPoder.gafas.addEventListener('click', () => {
@@ -214,15 +282,41 @@ botonPoder.sombrero.addEventListener('click', () => {
   sonido.acierto()
   avisar('🎩 Toca la pantalla a donde quieras teletransportarte')
 })
+botonPoder.cubo.addEventListener('click', () => {
+  if (estado !== 'jugando' || !level || player.inventario.cubo <= 0) return
+  player.inventario.cubo--
+  const cx = player.x + player.w / 2 + player.mirando * (player.w / 2 + 8)
+  const cy = player.y + player.h / 2
+  level.cubosVolando.push(new CuboVolando(cx, cy, player.mirando))
+  sonido.salto() // chasquido de lanzamiento
+})
+botonPoder.estrella.addEventListener('click', () => {
+  if (estado !== 'jugando' || player.inventario.estrella <= 0 || player.estrellaT > 0) return
+  player.inventario.estrella--
+  player.estrellaT = 9
+  sonido.acierto()
+  avisar('🌟 ¡Estrella! Atropella a los bichos sin recibir daño')
+})
 
-// Atajos de teclado: 1 = gafas, 2 = arcoíris, 3 = sombrero (y siguientes
-// números para futuros poderes, en el mismo orden que los iconos)
+// Atajos de teclado: 1 = gafas, 2 = arcoíris, 3 = sombrero, 4 = cubo de
+// Rubik, 5 = estrella (mismo orden que los iconos de la izquierda)
 window.addEventListener('keydown', (e) => {
   if (estado !== 'jugando') return
   if (e.key === '1') botonPoder.gafas.click()
   else if (e.key === '2') botonPoder.arcoiris.click()
   else if (e.key === '3') botonPoder.sombrero.click()
+  else if (e.key === '4') botonPoder.cubo.click()
+  else if (e.key === '5') botonPoder.estrella.click()
 })
+
+const EMOJI_PODER = {
+  gafas: '🕶️',
+  arcoiris: '🌈',
+  sombrero: '🎩',
+  cubo: '🎲',
+  estrella: '🌟',
+} as const
+const TECLA_PODER = { gafas: '1', arcoiris: '2', sombrero: '3', cubo: '4', estrella: '5' } as const
 
 function actualizarPoderHud(): void {
   const hudPoder = document.getElementById('hud-power')!
@@ -230,32 +324,34 @@ function actualizarPoderHud(): void {
   if (player.invisibleT > 0) partes.push(`🕶️ ${Math.ceil(player.invisibleT)}`)
   if (player.volarT > 0) partes.push(`🌈 ${Math.ceil(player.volarT)}`)
   if (player.teleUsos > 0) partes.push('🎩 toca el destino')
+  if (player.estrellaT > 0) partes.push(`🌟 ${Math.ceil(player.estrellaT)}`)
   hudPoder.textContent = partes.join('  ')
   hudPoder.classList.toggle('hidden', partes.length === 0)
 
-  // iconos: visibles si tienes el ítem o si su poder está activo
-  const estadoPorTipo = {
-    gafas: { activoT: player.invisibleT, sufijo: 's' },
-    arcoiris: { activoT: player.volarT, sufijo: 's' },
-    sombrero: { activoT: player.teleUsos > 0 ? 1 : 0, sufijo: '' },
+  // segundos restantes de cada poder con tiempo (el cubo no tiene "activo")
+  const activoT = {
+    gafas: player.invisibleT,
+    arcoiris: player.volarT,
+    sombrero: player.teleUsos > 0 ? 1 : 0,
+    cubo: 0,
+    estrella: player.estrellaT,
   } as const
   let algunoVisible = false
-  for (const tipo of ['gafas', 'arcoiris', 'sombrero'] as const) {
+  for (const tipo of ['gafas', 'arcoiris', 'sombrero', 'cubo', 'estrella'] as const) {
     const btn = botonPoder[tipo]
     const cuantos = player.inventario[tipo]
-    const activo = estadoPorTipo[tipo].activoT > 0
+    const activo = activoT[tipo] > 0
     const visible = cuantos > 0 || activo
     btn.classList.toggle('hidden', !visible)
     btn.classList.toggle('activo', activo)
     if (visible) {
       algunoVisible = true
-      const emoji = tipo === 'gafas' ? '🕶️' : tipo === 'arcoiris' ? '🌈' : '🎩'
-      const tecla = tipo === 'gafas' ? '1' : tipo === 'arcoiris' ? '2' : '3'
+      const emoji = EMOJI_PODER[tipo]
       btn.textContent = activo
         ? tipo === 'sombrero'
           ? `${emoji}…`
-          : `${emoji}${Math.ceil(estadoPorTipo[tipo].activoT)}`
-        : `${tecla}·${emoji}×${cuantos}`
+          : `${emoji}${Math.ceil(activoT[tipo])}`
+        : `${TECLA_PODER[tipo]}·${emoji}×${cuantos}`
     }
   }
   poderes.classList.toggle('hidden', !algunoVisible || estado !== 'jugando')
@@ -286,7 +382,9 @@ function update(dt: number): void {
     if (item.recogido || !seSolapan(player.rect(), item.rect())) continue
     item.recogido = true
     sonido.checkpoint()
-    player.inventario[item.tipo]++
+    // el cubo de Rubik da 3 lanzamientos por ítem; el resto, 1 uso
+    if (item.tipo === 'cubo') player.inventario.cubo += 3
+    else player.inventario[item.tipo]++
     if (!tutorialVisto(item.tipo)) {
       // primera vez: tarjeta explicativa con el juego en pausa
       marcarTutorialVisto(item.tipo)
@@ -301,20 +399,25 @@ function update(dt: number): void {
       gafas: '🕶️ Gafas guardadas',
       arcoiris: '🌈 Arcoíris guardado',
       sombrero: '🎩 Sombrero guardado',
+      cubo: '🎲 ¡3 cubos de Rubik!',
+      estrella: '🌟 Estrella guardada',
     }
     avisar(`${nombres[item.tipo]} — toca su icono cuando lo necesites`)
   }
 
-  // Vigilantes: te persiguen si te ven (y no estás invisible)
+  // Con la estrella activa atropellas a los bichos sin recibir daño
   const invisible = player.invisibleT > 0
+  const estrella = player.estrellaT > 0
+
+  // Vigilantes: te persiguen si te ven (y no estás invisible)
   for (const v of level.vigilantes) {
     v.update(dt, level, player.rect(), invisible)
     if (v.muerto || !seSolapan(player.rect(), v.rect())) continue
     const piesJugador = player.y + player.h
-    if (player.vy > 100 && piesJugador < v.y + v.h * 0.7) {
+    if (estrella || (player.vy > 100 && piesJugador < v.y + v.h * 0.7)) {
       v.muerto = true
       v.squashT = 0.4
-      player.vy = -340
+      if (!estrella) player.vy = -340 // con estrella no rebotas: lo atropellas
       sonido.pisoton()
     } else {
       morir()
@@ -322,10 +425,10 @@ function update(dt: number): void {
     }
   }
 
-  // Peces con pinchos: no se pueden pisar, solo esquivar
+  // Peces con pinchos: no se pueden pisar, solo esquivar (la estrella te protege)
   for (const pez of level.peces) {
     pez.update(dt, level)
-    if (seSolapan(player.rect(), pez.rect())) {
+    if (!estrella && seSolapan(player.rect(), pez.rect())) {
       morir()
       break
     }
@@ -350,6 +453,7 @@ function update(dt: number): void {
     jefe.update(dt, level, player.rect(), invisible)
     for (const bola of jefe.bolas) {
       if (seSolapan(player.rect(), bola.rect())) {
+        if (estrella) continue // la estrella te hace inmune a sus ataques
         bola.viva = false
         morir()
         break
@@ -376,14 +480,15 @@ function update(dt: number): void {
               } else {
                 avisar(`💜 ¡Al Comecubos le quedan ${jefe.vidas} corazones!`)
               }
+              if (vidas !== Infinity && res.errores >= 2) quitarVida()
             } else {
               avisar('💪 ¡Salta sobre él y prueba otra vez!')
             }
             estado = 'jugando'
           })
         }
-      } else {
-        morir()
+      } else if (!estrella) {
+        morir() // con estrella no te hace daño, pero tampoco le dañas a él
       }
     }
   }
@@ -397,15 +502,53 @@ function update(dt: number): void {
   for (const e of level.enemigos) {
     if (e.muerto || !seSolapan(player.rect(), e.rect())) continue
     const piesJugador = player.y + player.h
-    if (player.vy > 100 && piesJugador < e.y + e.h * 0.7) {
+    if (estrella || (player.vy > 100 && piesJugador < e.y + e.h * 0.7)) {
       e.muerto = true
       e.squashT = 0.4
-      player.vy = -340 // rebote
+      if (!estrella) player.vy = -340 // rebote (con estrella lo atropellas)
       sonido.pisoton()
     } else {
       morir()
       break
     }
+  }
+
+  // Cubos de Rubik lanzados: ruedan y aplastan hasta 2 bichos o dañan al jefe
+  for (const cubo of level.cubosVolando) {
+    cubo.update(dt, level)
+    if (!cubo.viva) continue
+    if (jefe && !jefe.muerto && jefe.invulT <= 0 && seSolapan(cubo.rect(), jefe.rect())) {
+      jefe.invulT = 0.6
+      jefe.golpear()
+      sonido.pisoton()
+      cubo.viva = false
+      if (jefe.muerto) {
+        sonido.victoria()
+        if (level.xiana) level.xiana.libre = true
+        avisar('💛 ¡La jaula se ha abierto! Corre con Xiana')
+      } else {
+        avisar(`💜 ¡Al Comecubos le quedan ${jefe.vidas} corazones!`)
+      }
+      continue
+    }
+    for (const bicho of [...level.enemigos, ...level.vigilantes]) {
+      if (bicho.muerto || !seSolapan(cubo.rect(), bicho.rect())) continue
+      bicho.muerto = true
+      bicho.squashT = 0.4
+      cubo.kills++
+      sonido.pisoton()
+      if (cubo.kills >= 2) {
+        cubo.viva = false
+        break
+      }
+    }
+  }
+  if (level.cubosVolando.some((c) => !c.viva)) {
+    level.cubosVolando.splice(
+      0,
+      level.cubosVolando.length,
+      ...level.cubosVolando.filter((c) => c.viva),
+    )
   }
 
   if (player.haMuerto(level)) morir()

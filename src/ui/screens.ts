@@ -11,13 +11,20 @@ import {
 } from '../storage/shop'
 import { guardarEnFichero } from '../storage/sync'
 import { dibujarPersonaje, FORMAS } from '../engine/character'
+import {
+  dificultadActual,
+  fijarDificultad,
+  NOMBRE_DIFICULTAD,
+  type Dificultad,
+} from '../game/dificultad'
 
 const CONTRASENA_DESBLOQUEO = '1566'
 
 /** Aplica los ajustes guardados (al arrancar y al cambiarlos). */
 export function aplicarAjustes(ajustes: Ajustes = cargarAjustes()): void {
   setSonidoActivado(ajustes.sonido)
-  document.body.classList.toggle('controles-grandes', ajustes.controlesGrandes)
+  document.body.classList.toggle('controles-grandes', ajustes.tamanoControles === 'grande')
+  document.body.classList.toggle('controles-pequenos', ajustes.tamanoControles === 'pequeno')
 }
 
 export function formatearTiempo(ms: number): string {
@@ -31,7 +38,8 @@ export function estrellasTexto(n: number): string {
 /** Pinta el menú principal con la rejilla de niveles. */
 export function mostrarMenu(alElegir: (nivel: number) => void): void {
   const pantalla = document.getElementById('screen-menu')!
-  const progreso = cargarProgreso()
+  const dificultad = dificultadActual()
+  const progreso = cargarProgreso(dificultad)
   const ajustes = cargarAjustes()
   const modoAbierto = ajustes.desbloqueado
 
@@ -42,6 +50,22 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
   const subtitulo = document.createElement('p')
   subtitulo.className = 'subtitulo'
   subtitulo.textContent = modoAbierto ? '🔓 Todos los niveles abiertos' : 'Elige un nivel'
+
+  // Selector de modo: cada modo guarda su propio progreso por separado.
+  const modos = document.createElement('div')
+  modos.className = 'modos'
+  for (const m of ['facil', 'medio', 'dificil'] as Dificultad[]) {
+    const btn = document.createElement('button')
+    btn.className = 'modo-btn'
+    btn.textContent = NOMBRE_DIFICULTAD[m]
+    if (m === dificultad) btn.classList.add('activo')
+    btn.addEventListener('click', () => {
+      if (m === dificultad) return
+      fijarDificultad(m)
+      mostrarMenu(alElegir) // re-pinta con el progreso de ese modo
+    })
+    modos.appendChild(btn)
+  }
 
   const rejilla = document.createElement('div')
   rejilla.className = 'niveles'
@@ -122,7 +146,27 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
 
   fila.append(btnTienda, btnGuardar, btnAjustes, btnDesbloquear)
 
-  pantalla.append(titulo, subtitulo, rejilla, btnFinal, fila)
+  // Pantalla completa (útil en el navegador del móvil; instalada no hace falta)
+  const instalada = window.matchMedia(
+    '(display-mode: fullscreen), (display-mode: standalone)',
+  ).matches
+  if (document.documentElement.requestFullscreen && !instalada) {
+    const btnPantalla = document.createElement('button')
+    btnPantalla.className = 'boton-grande secundario'
+    btnPantalla.textContent = '⛶ Pantalla completa'
+    btnPantalla.addEventListener('click', () => {
+      if (document.fullscreenElement) {
+        void document.exitFullscreen()
+      } else {
+        document.documentElement
+          .requestFullscreen({ navigationUI: 'hide' })
+          .catch(() => {})
+      }
+    })
+    fila.appendChild(btnPantalla)
+  }
+
+  pantalla.append(titulo, subtitulo, modos, rejilla, btnFinal, fila)
   pantalla.classList.remove('hidden')
 }
 
@@ -225,6 +269,18 @@ const TUTORIALES: Record<string, { emoji: string; titulo: string; texto: string 
     titulo: '¡Sombrero mágico!',
     texto:
       'Te TELETRANSPORTA: actívalo con su icono a la izquierda y después toca el lugar de la pantalla al que quieras viajar.',
+  },
+  cubo: {
+    emoji: '🎲',
+    titulo: '¡Cubo de Rubik!',
+    texto:
+      'Es tu ARMA: te da 3 cubos para lanzar. Toca su icono (o la tecla 4) y el cubo rueda hacia delante; aplasta hasta 2 bichos o le quita una vida al monstruo final.',
+  },
+  estrella: {
+    emoji: '🌟',
+    titulo: '¡Estrella invencible!',
+    texto:
+      'Actívala con su icono (o la tecla 5): durante unos segundos atropellas a todos los bichos y no te hacen daño. ¡Cuidado, el monstruo final no muere con ella!',
   },
 }
 
@@ -358,17 +414,24 @@ function abrirAjustes(alElegir: (nivel: number) => void): void {
     guardarAjustes(a)
     aplicarAjustes(a)
   })
-  const filaControles = filaOpcion(
-    'Botones gigantes',
-    ajustes.controlesGrandes,
-    (v) => {
-      const a = { ...cargarAjustes(), controlesGrandes: v }
-      guardarAjustes(a)
-      aplicarAjustes(a)
-    },
-    '🎮',
-    '🎮',
-  )
+
+  // Tamaño de los botones táctiles: pequeño → mediano → grande (cíclico)
+  const TAMANOS = ['pequeno', 'mediano', 'grande'] as const
+  const NOMBRE_TAMANO = { pequeno: 'PEQUEÑOS', mediano: 'MEDIANOS', grande: 'GRANDES' }
+  const filaControles = document.createElement('button')
+  filaControles.className = 'ajuste-fila'
+  const pintarTamano = (): void => {
+    filaControles.textContent = `🎮 Botones táctiles: ${NOMBRE_TAMANO[cargarAjustes().tamanoControles]}`
+  }
+  filaControles.addEventListener('click', () => {
+    const a = cargarAjustes()
+    const siguiente = TAMANOS[(TAMANOS.indexOf(a.tamanoControles) + 1) % TAMANOS.length]
+    const nuevo = { ...a, tamanoControles: siguiente }
+    guardarAjustes(nuevo)
+    aplicarAjustes(nuevo)
+    pintarTamano()
+  })
+  pintarTamano()
   caja.append(filaSonido, filaControles)
 
   const borrar = document.createElement('button')
@@ -377,10 +440,15 @@ function abrirAjustes(alElegir: (nivel: number) => void): void {
   borrar.addEventListener('click', () => {
     if (borrar.dataset.confirmar !== '1') {
       borrar.dataset.confirmar = '1'
-      borrar.textContent = '⚠️ ¿Seguro? Se pierden estrellas y tiempos. Toca otra vez'
+      borrar.textContent = '⚠️ ¿Seguro? Estrellas, monedas y personajes. Toca otra vez'
       return
     }
+    // borrado total: niveles, hucha, personajes comprados y tutoriales
     localStorage.removeItem('salta-numeros-v1')
+    localStorage.removeItem('salta-numeros-monedero')
+    localStorage.removeItem('salta-numeros-personajes')
+    localStorage.removeItem('salta-numeros-tutoriales')
+    void guardarEnFichero() // que el fichero del lanzador no lo "resucite"
     cerrarDialogo()
     mostrarMenu(alElegir)
   })

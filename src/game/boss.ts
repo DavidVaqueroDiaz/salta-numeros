@@ -1,6 +1,7 @@
 // El Comecubos (jefe final) y Xiana (la hermana a la que hay que salvar).
 import { TILE, type Rect } from './level'
 import type { Level } from './level'
+import { paramsDificultad } from './dificultad'
 
 /** Bola de fuego del jefe: vuela en arco y se apaga al tocar algo. */
 export class BolaFuego {
@@ -32,14 +33,19 @@ export class Jefe {
   x: number
   y: number
   dir: 1 | -1 = -1
-  vidas = 3
+  vidas: number
   vel = 55
   /** tras un pisotón queda un momento intocable (parpadea) */
   invulT = 0
   muerto = false
   squashT = 0
+  vy = 0
+  /** parpadeo breve al teletransportarse (para dibujarlo desvanecido) */
+  teleFlash = 0
   readonly bolas: BolaFuego[] = []
   private lanzaT = 2.5
+  private saltoT: number
+  private teleT: number
   private readonly minX: number
   private readonly maxX: number
 
@@ -49,6 +55,10 @@ export class Jefe {
     // patrulla alrededor de su punto de aparición, sin llegar a la jaula
     this.minX = this.x - 18 * TILE
     this.maxX = this.x + 18 * TILE
+    const p = paramsDificultad()
+    this.saltoT = p.jefeSaltoCada
+    this.teleT = p.jefeTeleCada
+    this.vidas = p.jefeVidas
   }
 
   rect(): Rect {
@@ -87,7 +97,45 @@ export class Jefe {
         this.lanzaT = 2.6 - (3 - this.vidas) * 0.5
       }
     }
-    const nx = this.x + this.dir * this.vel * dt
+    const p = paramsDificultad()
+    this.teleFlash = Math.max(0, this.teleFlash - dt)
+
+    // Movimiento vertical: solo si el jefe es ágil (en Fácil ni salta ni cae).
+    if (p.jefeAgil) {
+      this.vy += 1500 * dt
+      this.y += this.vy * dt
+      const fPies = Math.floor((this.y + this.h) / TILE)
+      const aIzq = Math.floor((this.x + 6) / TILE)
+      const aDer = Math.floor((this.x + this.w - 6) / TILE)
+      if (this.vy >= 0 && (level.esSolido(aIzq, fPies) || level.esSolido(aDer, fPies))) {
+        this.y = fPies * TILE - this.h
+        this.vy = 0
+      }
+
+      // Salta cada cierto tiempo, pero solo si tiene los pies en el suelo.
+      this.saltoT -= dt
+      if (this.saltoT <= 0 && this.vy === 0) {
+        this.vy = -560
+        this.saltoT = p.jefeSaltoCada
+      }
+
+      // Se teletransporta a otro punto de su zona (con suelo y hueco).
+      this.teleT -= dt
+      if (this.teleT <= 0) {
+        this.teleT = p.jefeTeleCada
+        const destino = this.buscarHueco(level)
+        if (destino) {
+          this.x = destino.x
+          this.y = destino.y
+          this.vy = 0
+          this.teleFlash = 0.35
+        }
+      }
+    }
+
+    // Patrulla horizontal (más rápida según el modo).
+    const enAire = p.jefeAgil && this.vy !== 0
+    const nx = this.x + this.dir * this.vel * p.velMul * dt
     const frente = Math.floor((this.dir > 0 ? nx + this.w : nx) / TILE)
     const filaCuerpo = Math.floor((this.y + this.h / 2) / TILE)
     const filaSuelo = Math.floor((this.y + this.h + 2) / TILE)
@@ -95,9 +143,24 @@ export class Jefe {
       nx < this.minX ||
       nx + this.w > this.maxX ||
       level.esSolido(frente, filaCuerpo) ||
-      !level.esSolido(frente, filaSuelo)
+      (!enAire && !level.esSolido(frente, filaSuelo)) // en el aire no le frena el borde
     if (bloqueado) this.dir = this.dir === 1 ? -1 : 1
     else this.x = nx
+  }
+
+  /** Busca una columna de su zona con suelo firme y dos huecos encima. */
+  private buscarHueco(level: Level): { x: number; y: number } | null {
+    const cMin = Math.max(1, Math.floor(this.minX / TILE))
+    const cMax = Math.min(level.cols - 2, Math.floor(this.maxX / TILE))
+    for (let intento = 0; intento < 12; intento++) {
+      const c = cMin + Math.floor(Math.random() * (cMax - cMin + 1))
+      for (let r = 2; r < level.rows - 1; r++) {
+        if (level.esSolido(c, r + 1) && !level.esSolido(c, r) && !level.esSolido(c, r - 1)) {
+          return { x: c * TILE + (TILE - this.w) / 2, y: (r + 1) * TILE - this.h }
+        }
+      }
+    }
+    return null
   }
 
   /** Un reto matemático acertado: pierde un corazón y se enfada (acelera). */

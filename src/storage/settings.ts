@@ -1,8 +1,10 @@
 // Ajustes del juego, guardados en el dispositivo.
 
+export type TamanoControles = 'pequeno' | 'mediano' | 'grande'
+
 export interface Ajustes {
   sonido: boolean
-  controlesGrandes: boolean
+  tamanoControles: TamanoControles
   /** todos los niveles desbloqueados (protegido por contraseña) */
   desbloqueado: boolean
 }
@@ -11,14 +13,21 @@ const CLAVE = 'salta-numeros-ajustes'
 
 const PREDETERMINADOS: Ajustes = {
   sonido: true,
-  controlesGrandes: false,
+  tamanoControles: 'mediano',
   desbloqueado: false,
 }
 
 export function cargarAjustes(): Ajustes {
   try {
     const raw = localStorage.getItem(CLAVE)
-    return raw ? { ...PREDETERMINADOS, ...JSON.parse(raw) } : { ...PREDETERMINADOS }
+    if (!raw) return { ...PREDETERMINADOS }
+    const guardado = JSON.parse(raw)
+    const ajustes = { ...PREDETERMINADOS, ...guardado }
+    // migración del ajuste antiguo (booleano "controlesGrandes")
+    if (guardado.controlesGrandes === true && !guardado.tamanoControles) {
+      ajustes.tamanoControles = 'grande'
+    }
+    return ajustes
   } catch {
     return { ...PREDETERMINADOS }
   }

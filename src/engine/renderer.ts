@@ -121,6 +121,7 @@ export class Renderer {
     this.enemigosDibujo(level)
     this.vigilantesDibujo(level, player)
     this.pecesDibujo(level)
+    this.cubosDibujo(level)
     this.jefeDibujo(level)
     this.xianaDibujo(level)
     this.meta(level)
@@ -147,6 +148,17 @@ export class Renderer {
         ctx.fill()
       }
       ctx.globalAlpha = 1
+    }
+    // estrella: aura dorada parpadeante alrededor del personaje
+    if (player.estrellaT > 0) {
+      const destello = 0.5 + 0.5 * Math.sin(t * 18)
+      ctx.save()
+      ctx.globalAlpha = 0.35 + destello * 0.35
+      ctx.fillStyle = destello > 0.5 ? '#ffd60a' : '#fff3b0'
+      ctx.beginPath()
+      ctx.arc(player.x + player.w / 2, player.y + player.h / 2, player.w + 6, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
     }
     // invisible: se ve translúcido (el jugador sí se ve a sí mismo)
     if (player.invisibleT > 0) ctx.globalAlpha = 0.35
@@ -240,7 +252,7 @@ export class Renderer {
           ctx.arc(item.cx, y + 6, 12 - i * 3.5, Math.PI, 2 * Math.PI)
           ctx.stroke()
         })
-      } else {
+      } else if (item.tipo === 'sombrero') {
         // sombrero rojo con brillos
         ctx.fillStyle = '#c1121f'
         ctx.beginPath()
@@ -254,7 +266,71 @@ export class Renderer {
         ctx.textAlign = 'center'
         ctx.fillText('✦', item.cx + 13, y - 4 + Math.sin(t * 5) * 2)
         ctx.fillText('✦', item.cx - 13, y + 2 + Math.cos(t * 5) * 2)
+      } else if (item.tipo === 'cubo') {
+        // cubo de Rubik girando suavemente
+        this.dibujarCubo(item.cx, y, 22, Math.sin(t * 1.5 + item.cx) * 0.4)
+      } else {
+        // estrella dorada que late
+        this.dibujarEstrella(item.cx, y, 13 + Math.sin(t * 4 + item.cx) * 1.5, t)
       }
+    }
+  }
+
+  /** Dibuja un cubo de Rubik (cuadro 3×3 de colores) en (cx, cy). */
+  private dibujarCubo(cx: number, cy: number, lado: number, giro: number): void {
+    const ctx = this.ctx
+    const colores = ['#e63946', '#ffd60a', '#3a86ff', '#52b788', '#f77f00', '#ffffff']
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.rotate(giro)
+    const m = lado / 2
+    // marco negro
+    ctx.fillStyle = '#1d1d1d'
+    ctx.beginPath()
+    ctx.roundRect(-m, -m, lado, lado, 4)
+    ctx.fill()
+    // 9 pegatinas
+    const celda = lado / 3
+    const hueco = celda * 0.78
+    const off = (celda - hueco) / 2
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        ctx.fillStyle = colores[(r * 3 + c + Math.round(cx)) % colores.length]
+        ctx.beginPath()
+        ctx.roundRect(-m + c * celda + off, -m + r * celda + off, hueco, hueco, 1.5)
+        ctx.fill()
+      }
+    }
+    ctx.restore()
+  }
+
+  /** Dibuja una estrella dorada de cinco puntas en (cx, cy). */
+  private dibujarEstrella(cx: number, cy: number, radio: number, t: number): void {
+    const ctx = this.ctx
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.rotate(Math.sin(t * 2) * 0.15)
+    ctx.fillStyle = '#ffd60a'
+    ctx.strokeStyle = '#e6a700'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    for (let i = 0; i < 10; i++) {
+      const ang = (Math.PI / 5) * i - Math.PI / 2
+      const rad = i % 2 === 0 ? radio : radio * 0.45
+      const px = Math.cos(ang) * rad
+      const py = Math.sin(ang) * rad
+      if (i === 0) ctx.moveTo(px, py)
+      else ctx.lineTo(px, py)
+    }
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  private cubosDibujo(level: Level): void {
+    for (const cubo of level.cubosVolando) {
+      this.dibujarCubo(cubo.x + cubo.w / 2, cubo.y + cubo.h / 2, cubo.w, cubo.giro)
     }
   }
 

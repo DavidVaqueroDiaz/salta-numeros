@@ -1,4 +1,10 @@
 // Progreso guardado en localStorage: estrellas, mejor tiempo y completado por nivel.
+//
+// Cada modo de dificultad guarda su progreso por separado: Fácil usa la clave
+// de siempre (no se toca lo que Joel ya tiene); Medio y Difícil estrenan su
+// propia clave, así sus estrellas y desbloqueos no se mezclan con los de Fácil.
+
+import type { Dificultad } from '../game/dificultad'
 
 export interface LevelProgress {
   stars: number
@@ -10,11 +16,15 @@ export interface LevelProgress {
 
 export type Progress = Record<number, LevelProgress>
 
-const CLAVE = 'salta-numeros-v1'
+export const CLAVES_PROGRESO: Record<Dificultad, string> = {
+  facil: 'salta-numeros-v1',
+  medio: 'salta-numeros-medio-v1',
+  dificil: 'salta-numeros-dificil-v1',
+}
 
-export function cargarProgreso(): Progress {
+export function cargarProgreso(modo: Dificultad = 'facil'): Progress {
   try {
-    const raw = localStorage.getItem(CLAVE)
+    const raw = localStorage.getItem(CLAVES_PROGRESO[modo])
     return raw ? (JSON.parse(raw) as Progress) : {}
   } catch {
     return {}
@@ -32,8 +42,9 @@ export function guardarResultado(
   tiempoMs: number,
   estrellas: number,
   monedas = 0,
+  modo: Dificultad = 'facil',
 ): ResultadoGuardado {
-  const progreso = cargarProgreso()
+  const progreso = cargarProgreso(modo)
   const previo = progreso[nivel]
   const esNuevoRecord = !previo || tiempoMs < previo.bestMs
   progreso[nivel] = {
@@ -43,7 +54,7 @@ export function guardarResultado(
     coins: Math.max(monedas, previo?.coins ?? 0),
   }
   try {
-    localStorage.setItem(CLAVE, JSON.stringify(progreso))
+    localStorage.setItem(CLAVES_PROGRESO[modo], JSON.stringify(progreso))
   } catch {
     // sin espacio o modo privado: el juego sigue funcionando sin guardar
   }
