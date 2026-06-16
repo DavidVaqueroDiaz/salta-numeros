@@ -132,7 +132,9 @@ function agua({
     z.pon(r, 0, '#')
     z.pon(r, 109, '#')
   }
-  for (const [r0, r1, c] of pilares) z.col(c, r0, r1, '#')
+  // pilares de roca que SUBEN desde el fondo: nunca llegan arriba del todo, así
+  // siempre queda un carril (filas 11-13) para nadar por encima (paso garantizado)
+  for (const [, r1, c] of pilares) z.col(c, 14, Math.max(14, r1), '#')
   for (const [r, c] of peces) z.pon(r, c, 'f')
   // monedas escondidas en el fondo del agua (hay que bucear hondo a por ellas)
   for (const [r, c] of [[15, 20], [17, 48], [13, 64], [16, 82], [15, 100]]) z.pon(r, c, 'o')

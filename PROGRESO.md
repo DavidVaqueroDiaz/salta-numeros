@@ -508,6 +508,17 @@ Tema espacio, mates reto3/operacion/mitadDoble.
   rescate. Excluye buceo/barra (mecánicas no modeladas). Tras los arreglos:
   **todas las fases pasan**. check-levels y build, en verde.
 
+### Fases de agua bloqueadas por pilares (2026-06-15)
+
+- **Pilares submarinos que tapaban el paso**: en las fases de buceo (37-41)
+  había pilares de roca de altura COMPLETA (filas 11-18) que cerraban el agua →
+  fase imposible (38, 39, 41). Ahora en el constructor `agua` los pilares solo
+  suben desde el fondo hasta la fila 14: siempre queda un **carril por arriba
+  (filas 11-13)** para nadar por encima. Paso garantizado.
+- **Verificador con buceo**: `check-passable.mjs` ahora modela NADAR (el agua es
+  transitable en todas direcciones) además de saltos y tubos, así detecta estos
+  bloqueos submarinos. Con el arreglo, todas las fases pasan.
+
 - Cinemática de cierre + contador total de estrellas con premio al 100 %.
 - Pistas visuales con bloquecitos al fallar una puerta.
 - Música chiptune + squash & stretch + vibración + botón pausa.

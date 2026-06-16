@@ -71,7 +71,9 @@ for (const fichero of ficheros) {
     parDeTubo.set(tubos[i + 1].join(), tubos[i])
   }
 
-  // BFS por celdas pisables
+  // BFS por celdas transitables (tierra pisable o agua, donde se nada libremente)
+  const esAgua = (c, r) => ch(c, r) === '~' || ch(c, r) === 'f'
+  const transitable = (c, r) => pisable(c, r) || esAgua(c, r)
   const key = (c, r) => c + ',' + r
   const vista = new Set()
   const cola = [start]
@@ -79,7 +81,7 @@ for (const fichero of ficheros) {
   let alcanzaMeta = false
   let alcanzaR = false
   const visita = (nc, nr) => {
-    if (!pisable(nc, nr)) return
+    if (!transitable(nc, nr)) return
     const k = key(nc, nr)
     if (vista.has(k)) return
     vista.add(k)
@@ -96,18 +98,25 @@ for (const fichero of ficheros) {
         if (par) for (let q = -1; q <= 1; q++) for (let s = -2; s <= 1; s++) visita(par[0] + q, par[1] + s)
       }
     }
-    // destinos pisables dentro del sobre de salto
-    for (let dr = -VUP; dr <= 6; dr++) {
-      for (let dc = -HMAX; dc <= HMAX; dc++) {
-        const up = Math.max(0, -dr)
-        if (Math.abs(dc) + 2 * up > COMB) continue // saltos altos no llegan tan lejos
-        visita(c + dc, r + dr)
+    if (esAgua(c, r)) {
+      // nadar: a cualquier celda adyacente (agua o salir a tierra)
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) visita(c + dc, r + dr)
+    } else {
+      // tierra: entrar al agua adyacente
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) if (esAgua(c + dc, r + dr)) visita(c + dc, r + dr)
+      // saltos a tierra pisable dentro del sobre de salto
+      for (let dr = -VUP; dr <= 6; dr++) {
+        for (let dc = -HMAX; dc <= HMAX; dc++) {
+          const up = Math.max(0, -dr)
+          if (Math.abs(dc) + 2 * up > COMB) continue // saltos altos no llegan tan lejos
+          visita(c + dc, r + dr)
+        }
       }
     }
   }
-  // las fases de buceo (con tubos) y la barra usan mecánicas que este script
-  // no modela (nadar, teletransporte, montar la barra); se revisan aparte
-  const mecanicaEspecial = tubos.length > 0 || hayBarra
+  // la barra (montar móvil ancho + teletransporte) usa mecánicas no modeladas
+  const mecanicaEspecial = hayBarra
   const superable = alcanzaMeta || (hayR && alcanzaR) || mecanicaEspecial
   if (!superable) {
     console.log(`  ❌ ${fichero}: no se alcanza la meta (¿salto imposible?)`)
