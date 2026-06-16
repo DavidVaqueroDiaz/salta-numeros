@@ -468,6 +468,23 @@ Tema espacio, mates reto3/operacion/mitadDoble.
   jefe 108 lanza/daña (pisotón→mates y cubo 3→2); build (253 KB) y check-levels
   en verde.
 
+### Arreglos tras pruebas: jefe Mundo 3, variedad y fase de la barra (2026-06-15)
+
+- **Arena del Remolino (108) rehecha** (era imposible: todo lava, sin checkpoint
+  → cada lanzamiento = muerte). Ahora hay una **isla de lucha SÓLIDA** (no lava)
+  con **punto de control** (reapareces en la isla), plataformas de re-subida a
+  los lados (al ser lanzado caes y vuelves), plataformas altas para caerle
+  encima y sombrero de rescate. Lava solo en los fosos. Verificado: isla sólida,
+  checkpoint, pisotón abre mates.
+- **Más variedad**: el patrón de alturas de las plataformas (ruta alta del
+  Mundo 2 y camino aéreo del Mundo 3) y el ancho de las fases aéreas ahora
+  varían por fase (`PATRONES` + semilla), para que no se parezcan tanto.
+- **Fase nueva "monta en la barra" (nivel 90)**: barra verde ANCHA y lenta
+  (`PlataformaMovil` con `rango`/`velAng`/`anchoTiles`, char `'n'`) que va de un
+  lado a otro sobre la lava; sin bajarte saltas a por monedas y los ítems
+  (sombrero + arcoíris) que hacen falta al final para cruzar el muro mágico y
+  volar sobre el último foso de lava. `check-levels` y build en verde.
+
 ## Ideas en la nevera (decididas NO ahora)
 
 - Cinemática de cierre + contador total de estrellas con premio al 100 %.

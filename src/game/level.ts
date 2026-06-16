@@ -99,6 +99,9 @@ export class Level {
           this.moviles.push(new PlataformaMovil(c, r, true))
         } else if (ch === 'w') {
           this.moviles.push(new PlataformaMovil(c, r, false))
+        } else if (ch === 'n') {
+          // barra verde ANCHA y lenta: se monta uno encima y se cruza la fase
+          this.moviles.push(new PlataformaMovil(c, r, true, 9, 0.85, 4))
         } else if (ch === 'F') {
           this.caedizas.push(new PlataformaCaediza(c, r, this.rows * TILE))
         } else if (ch === 'C') {

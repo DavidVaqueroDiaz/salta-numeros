@@ -13,6 +13,9 @@ import { fileURLToPath } from 'node:url'
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'levels')
 
+// contador para variar el patrón de la ruta alta entre fases (no repetirse)
+let _seedAlta = 0
+
 const COLORES = {
   1: '#e63946', 2: '#f77f00', 3: '#ffd60a', 4: '#52b788', 5: '#4cc9f0',
   6: '#3f37c9', 7: '#3a86ff', 8: '#ff5d8f', 9: '#9aa5b1', 10: '#adb5bd',
@@ -61,7 +64,15 @@ function estandar({
   // ruta alta: plataformas a distintas alturas para saltar de una a otra
   // (camino alternativo con monedas de premio y algún bicho de reto)
   if (rutaAlta) {
-    const alturas = [5, 3, 6, 4, 5, 3, 6, 4]
+    // patrón de alturas distinto en cada fase para que no se parezcan
+    const PATRONES = [
+      [5, 3, 6, 4, 5, 3, 6, 4],
+      [3, 6, 4, 7, 3, 5, 6, 4],
+      [6, 4, 3, 5, 7, 4, 6, 3],
+      [4, 7, 5, 3, 6, 4, 7, 5],
+      [7, 4, 6, 3, 5, 7, 4, 6],
+    ]
+    const alturas = PATRONES[_seedAlta++ % PATRONES.length]
     let i = 0
     for (let col = 12; col <= W - 20; col += 10) {
       const r = alturas[i % alturas.length]

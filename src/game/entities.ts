@@ -67,7 +67,7 @@ export class Enemigo {
 }
 
 export class PlataformaMovil implements PlataformaPisable {
-  readonly w = TILE * 3
+  readonly w: number
   readonly h = 14
   x: number
   y: number
@@ -76,12 +76,23 @@ export class PlataformaMovil implements PlataformaPisable {
   private t = 0
   private readonly cx: number
   private readonly cy: number
+  private readonly rango: number
+  private readonly velAng: number
 
   constructor(
     col: number,
     fila: number,
     private readonly horizontal: boolean,
+    /** amplitud del vaivén en tiles (la "barra" larga usa más) */
+    rango = horizontal ? 2 : 1.5,
+    /** velocidad angular del vaivén (las barras anchas van más lentas) */
+    velAng = 1.6,
+    /** ancho en tiles */
+    anchoTiles = 3,
   ) {
+    this.w = TILE * anchoTiles
+    this.rango = rango
+    this.velAng = velAng
     this.cx = col * TILE + TILE / 2 - this.w / 2
     this.cy = fila * TILE + TILE - this.h
     this.x = this.cx
@@ -94,11 +105,11 @@ export class PlataformaMovil implements PlataformaPisable {
 
   update(dt: number): void {
     this.t += dt
-    const onda = Math.sin(this.t * 1.6)
+    const onda = Math.sin(this.t * this.velAng)
     const px = this.x
     const py = this.y
-    if (this.horizontal) this.x = this.cx + onda * TILE * 2
-    else this.y = this.cy + onda * TILE * 1.5
+    if (this.horizontal) this.x = this.cx + onda * TILE * this.rango
+    else this.y = this.cy + onda * TILE * this.rango
     this.dxUlt = this.x - px
     this.dyUlt = this.y - py
   }

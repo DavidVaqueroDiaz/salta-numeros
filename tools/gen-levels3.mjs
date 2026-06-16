@@ -57,23 +57,76 @@ function aereo({
   // camino de plataformas
   const cols = []
   for (let col = 12; col <= W - 12; col += paso) cols.push(col)
+  // 1) plataformas estáticas + monedas (las puertas van al final)
   cols.forEach((col, i) => {
+    if (doorsIdx.includes(i)) return
     const r = filas[i % filas.length]
-    if (doorsIdx.includes(i)) {
-      // plataforma ancha con puerta de mates encima (altura 4 → no saltable)
-      const rd = Math.max(4, r)
-      z.pon(rd, col - 2, '#####')
-      z.col(col, 0, rd - 5, '.')
-      for (let dr = rd - 4; dr <= rd - 1; dr++) z.pon(dr, col, 'D')
-    } else {
-      z.pon(r, col, '###')
-      if (i % 2 === 0) z.pon(r - 1, col + 1, 'o')
-      if (i % 3 === 1 && r - 3 >= 0) z.pon(r - 3, col + 1, 'o') // moneda alta escondida
-    }
+    z.pon(r, col, '###')
+    if (i % 2 === 0) z.pon(r - 1, col + 1, 'o')
+    if (i % 3 === 1 && r - 3 >= 0) z.pon(r - 3, col + 1, 'o') // moneda alta escondida
   })
+  // 2) extras: móviles/caedizas/parpadeantes/ítems
   for (const [r, c, t] of extras) z.pon(r, c, t)
+  // 3) puertas de mates AL FINAL (plataforma ancha + puerta intacta, no saltable)
+  doorsIdx.forEach((i) => {
+    const col = cols[i]
+    if (col === undefined) return
+    const rd = Math.max(4, filas[i % filas.length])
+    z.pon(rd, col - 2, '#####')
+    z.col(col, 0, rd - 5, '.')
+    for (let dr = rd - 4; dr <= rd - 1; dr++) z.pon(dr, col, 'D')
+  })
   return z.filas()
 }
+
+/**
+ * Fase ESPECIAL "monta en la barra": te subes a una barra verde ancha que va
+ * de un lado a otro sobre la lava y, SIN bajarte, saltas para coger monedas y
+ * los ítems (sombrero y arcoíris) que harás falta al final para cruzar el muro
+ * mágico y volar sobre el último foso de lava.
+ */
+function barraLevel() {
+  const W = 86
+  const z = rejilla(11, W)
+  z.rellena(9, 0, W - 1, 'L')
+  z.rellena(10, 0, W - 1, 'L')
+  z.rellena(9, 0, 12, '#')
+  z.rellena(10, 0, 12, '#')
+  z.pon(8, 3, 'P')
+  // barra ancha y lenta que va de un lado a otro
+  z.pon(8, 22, 'n')
+  // monedas e ítems por encima de la barra (saltar a por ellos sin caer)
+  z.pon(5, 16, 'G')
+  z.pon(5, 20, 'o')
+  z.pon(4, 24, 'R')
+  z.pon(5, 28, 'o')
+  z.pon(5, 31, 'H')
+  z.pon(6, 13, 'o')
+  z.pon(6, 35, 'o')
+  // plataforma para bajarse de la barra (a la derecha)
+  z.pon(7, 38, '###')
+  // MURO mágico: solo se cruza con el SOMBRERO cogido en la barra
+  z.col(44, 0, 10, '#')
+  z.pon(7, 50, '###')
+  // foso de lava ancho: hay que VOLAR con el ARCOÍRIS cogido en la barra
+  // (cols 53-69 son lava, sin plataformas)
+  z.pon(7, 70, '###')
+  // repisa final con la meta
+  z.rellena(9, 70, W - 1, '#')
+  z.rellena(10, 70, W - 1, '#')
+  z.pon(8, 78, 'M')
+  return z.filas()
+}
+
+// patrones de alturas de plataforma (para que las fases no se parezcan)
+const PATRONES = [
+  [7, 5, 6, 4, 7, 5, 6, 4],
+  [6, 4, 7, 5, 3, 6, 4, 7],
+  [7, 3, 5, 7, 4, 6, 3, 5],
+  [5, 7, 4, 6, 8, 5, 7, 4],
+  [6, 8, 4, 6, 3, 7, 5, 8],
+  [8, 5, 7, 4, 6, 8, 5, 6],
+]
 
 const NIVELES = {
   // ===== LAVA AÉREA (73-78) =====
@@ -159,36 +212,52 @@ const NIVELES = {
     a: { tipo: 'lava', paso: 7, filas: [7, 3, 6, 4, 7, 3, 6, 4], extras: [[8, 16, 'G'], [8, 20, 'R'], [7, 33, 'm'], [6, 61, 'b'], [5, 89, 'F']] } },
 }
 
-// ----- FASE FINAL DEL MUNDO 3: el Remolino (Y) en una arena aérea -----
+// ----- FASE FINAL DEL MUNDO 3: el Remolino (Y) -----
+// Hay una ISLA DE LUCHA sólida (no lava) donde peleas; el Remolino te lanza
+// fuera y caes en plataformas más bajas por las que vuelves a SUBIR a la isla.
+// Plataformas altas para caerle encima, punto de control y sombrero de rescate.
 function bossMundo3() {
-  const W = 150
+  const W = 172
   const z = rejilla(11, W)
-  // fondo de lava
   z.rellena(9, 0, W - 1, 'L')
   z.rellena(10, 0, W - 1, 'L')
-  // repisa de salida y plataforma de la meta/Xiana
-  z.rellena(9, 0, 8, '#')
-  z.rellena(10, 0, 8, '#')
+  // repisa de salida con ítems
+  z.rellena(9, 0, 12, '#')
+  z.rellena(10, 0, 12, '#')
   z.pon(8, 3, 'P')
   z.pon(8, 16, 'G')
-  z.pon(8, 22, 'R')
-  // campo de plataformas a distintas alturas para subir y caer sobre el jefe
-  const plats = [
-    [8, 24], [6, 34], [7, 46], [4, 40], [5, 58], [8, 64], [3, 70],
-    [6, 78], [5, 92], [7, 100], [4, 96], [8, 110], [6, 120],
-  ]
-  for (const [r, c] of plats) z.pon(r, c, '###')
-  z.pon(5, 35, 'o')
-  z.pon(3, 71, 'ooo')
+  z.pon(8, 20, 'R')
+  // plataformas de aproximación a la isla
+  z.pon(7, 22, '###')
+  z.pon(6, 32, '###')
+  z.pon(7, 42, '###')
+  z.pon(6, 52, '###')
+  // ISLA DE LUCHA: plataforma sólida ancha (aquí se pelea, sin lava)
+  z.rellena(8, 60, 112, '#')
+  z.pon(7, 66, 'C') // punto de control: si mueres, reapareces en la isla
+  z.pon(7, 104, 'H') // sombrero por si te lanzan a un mal sitio
+  // plataformas de re-subida (al ser lanzado fuera, caes aquí y vuelves)
+  z.pon(6, 54, '###')
+  z.pon(5, 50, '###')
+  z.pon(6, 116, '###')
+  z.pon(5, 120, '###')
+  // plataformas ALTAS para coger altura y caer sobre el Remolino
+  z.pon(5, 78, '###')
+  z.pon(3, 86, '#####')
+  z.pon(5, 96, '###')
+  z.pon(2, 88, 'ooo')
+  z.pon(4, 79, 'o')
   z.pon(4, 97, 'o')
-  // sombrero para escapar si te lanzan a un mal sitio
-  z.pon(7, 47, 'H')
-  // el Remolino flota en el centro de la arena
+  // el Remolino flota sobre la isla
   z.pon(7, 86, 'Y')
-  // plataforma final con Xiana
-  z.rellena(9, 134, W - 1, '#')
-  z.rellena(10, 134, W - 1, '#')
-  z.pon(8, 144, 'X')
+  // plataformas hacia la meta (cruzar el último foso de lava)
+  z.pon(7, 124, '###')
+  z.pon(6, 134, '###')
+  z.pon(7, 144, '###')
+  // repisa final con Xiana
+  z.rellena(9, 152, W - 1, '#')
+  z.rellena(10, 152, W - 1, '#')
+  z.pon(8, 162, 'X')
   return z.filas()
 }
 {
@@ -217,19 +286,30 @@ ${mapa.map((f) => `    '${f}',`).join('\n')}
 }
 
 for (const [n, def] of Object.entries(NIVELES)) {
-  const numero = Math.min(Number(n), 25)
-  const colorUi = ((Number(n) - 1) % 10) + 1
-  const aviso = (def.aviso ? `\n  aviso: '${def.aviso}',` : '')
+  const seed = Number(n)
+  const numero = Math.min(seed, 25)
+  const colorUi = ((seed - 1) % 10) + 1
+  // variedad: cada fase usa un patrón de alturas y un ancho distintos
+  const a = { ...def.a }
+  a.W = a.W ?? 110 + (seed % 6) * 5
+  if (!a.filas) a.filas = PATRONES[seed % PATRONES.length]
+  const esBarra = seed === 90
+  const avisoTexto = esBarra
+    ? '🟩 ¡Móntate en la barra verde! Salta a por las monedas y los ítems sin caer'
+    : def.aviso
+  const aviso = avisoTexto ? `\n  aviso: '${avisoTexto}',` : ''
+  const com = esBarra ? 'monta en la barra verde y cruza saltando' : def.com
+  const mapaFilas = esBarra ? barraLevel() : aereo(a)
   const contenido = `import type { LevelData } from './types'
 
-// Nivel ${n} (Mundo 3, aéreo): ${def.com}
+// Nivel ${n} (Mundo 3, aéreo): ${com}
 // (generado con tools/gen-levels3.mjs; puede editarse a mano)
 export const nivel${n}: LevelData = {
   numero: ${numero},
   color: '${COLORES[colorUi]}',
   tema: 'espacio',
   mapa: [
-${aereo(def.a).map((f) => `    '${f}',`).join('\n')}
+${mapaFilas.map((f) => `    '${f}',`).join('\n')}
   ],
   puertas: { tipo: '${def.m}', max: ${def.max} },
   parMs: ${def.par},${aviso}
