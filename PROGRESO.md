@@ -492,7 +492,21 @@ Tema espacio, mates reto3/operacion/mitadDoble.
   repisa (col 17, a 1 tile) para subirse al instante. Verificado: 1ª plataforma
   del 71 en fila 8, barra a 1 tile.
 
-## Ideas en la nevera (decididas NO ahora)
+### Monedas en agua, saltos imposibles y verificación de todas las fases (2026-06-15)
+
+- **Monedas bajo el agua sin cuadrado vacío**: el carácter `o` borraba el `~`,
+  dejando un hueco sin agua. `level.ts` ahora, tras parsear, devuelve el agua a
+  las casillas de monedas rodeadas de agua (se ven flotando).
+- **Saltos imposibles arreglados**: arcoíris (volar) en la repisa de salida de
+  TODAS las fases aéreas del Mundo 3 (red de seguridad), y arcoíris + plataformas
+  más bajas en el nivel 47. La **arena del Tornado (108)** tenía el acceso roto
+  (repisa a col 12, primera plataforma a col 22 = salto de 10, e ítems sobre la
+  lava); rehecha con escalera de plataformas cada ~6 e ítems sobre la repisa.
+- **Verificador de superabilidad** (`tools/check-passable.mjs`): BFS desde la
+  'P' a la meta con sobre de salto realista (doble salto ~6×3, lunar ~13×6),
+  modela tubos y plataformas móviles, y considera el arcoíris alcanzable como
+  rescate. Excluye buceo/barra (mecánicas no modeladas). Tras los arreglos:
+  **todas las fases pasan**. check-levels y build, en verde.
 
 - Cinemática de cierre + contador total de estrellas con premio al 100 %.
 - Pistas visuales con bloquecitos al fallar una puerta.

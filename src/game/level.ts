@@ -145,6 +145,22 @@ export class Level {
       this.tubos[i + 1].par = this.tubos[i]
     }
 
+    // Una moneda colocada dentro del agua deja su casilla vacía (el carácter 'o'
+    // borra el '~'); si está rodeada de agua, le devolvemos el agua detrás para
+    // que se vea flotando y no en un cuadrado sin agua.
+    for (const m of this.monedas) {
+      const c = Math.floor(m.cx / TILE)
+      const r = Math.floor(m.cy / TILE)
+      if (this.tileAt(c, r) !== 0) continue
+      const rodeadaDeAgua = [
+        [c - 1, r],
+        [c + 1, r],
+        [c, r - 1],
+        [c, r + 1],
+      ].some(([cc, rr]) => this.tileAt(cc, rr) === AGUA)
+      if (rodeadaDeAgua) this.tiles[r * this.cols + c] = AGUA
+    }
+
     this.generarBichosExtra()
     this.generarItemsEspeciales()
   }

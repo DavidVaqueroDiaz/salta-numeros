@@ -49,6 +49,9 @@ function aereo({
   z.rellena(10, W - 7, W - 1, '#')
   z.pon(8, 3, 'P')
   z.pon(8, W - 4, 'M')
+  // arcoíris en la repisa de salida: red de seguridad para volar si un salto
+  // se hace demasiado largo (las fases aéreas siempre se pueden superar)
+  z.pon(8, 7, 'R')
   // peces en el agua (muchos: atacan al caer)
   if (tipo === 'agua') {
     const step = Math.max(5, Math.floor((W - 24) / peces))
@@ -218,46 +221,40 @@ const NIVELES = {
 // fuera y caes en plataformas más bajas por las que vuelves a SUBIR a la isla.
 // Plataformas altas para caerle encima, punto de control y sombrero de rescate.
 function bossMundo3() {
-  const W = 172
+  const W = 170
   const z = rejilla(11, W)
   z.rellena(9, 0, W - 1, 'L')
   z.rellena(10, 0, W - 1, 'L')
-  // repisa de salida con ítems
-  z.rellena(9, 0, 12, '#')
-  z.rellena(10, 0, 12, '#')
+  // repisa de salida LARGA con los ítems ENCIMA de ella (alcanzables)
+  z.rellena(9, 0, 13, '#')
+  z.rellena(10, 0, 13, '#')
   z.pon(8, 3, 'P')
-  z.pon(8, 16, 'G')
-  z.pon(8, 20, 'R')
-  // plataformas de aproximación a la isla
-  z.pon(7, 22, '###')
-  z.pon(6, 32, '###')
-  z.pon(7, 42, '###')
-  z.pon(6, 52, '###')
+  z.pon(8, 6, 'G')
+  z.pon(8, 9, 'R')
+  // escalera de aproximación a la isla (plataformas cada 6, alturas suaves)
+  for (const [r, c] of [[8, 18], [7, 24], [8, 30], [7, 36], [8, 42], [7, 48], [8, 54]]) {
+    z.pon(r, c, '###')
+  }
   // ISLA DE LUCHA: plataforma sólida ancha (aquí se pelea, sin lava)
-  z.rellena(8, 60, 112, '#')
-  z.pon(7, 66, 'C') // punto de control: si mueres, reapareces en la isla
-  z.pon(7, 104, 'H') // sombrero por si te lanzan a un mal sitio
-  // plataformas de re-subida (al ser lanzado fuera, caes aquí y vuelves)
-  z.pon(6, 54, '###')
-  z.pon(5, 50, '###')
-  z.pon(6, 116, '###')
-  z.pon(5, 120, '###')
-  // plataformas ALTAS para coger altura y caer sobre el Remolino
-  z.pon(5, 78, '###')
-  z.pon(3, 86, '#####')
-  z.pon(5, 96, '###')
-  z.pon(2, 88, 'ooo')
-  z.pon(4, 79, 'o')
-  z.pon(4, 97, 'o')
+  z.rellena(8, 58, 112, '#')
+  z.pon(7, 64, 'C') // punto de control: si mueres, reapareces en la isla
+  z.pon(7, 106, 'H') // sombrero por si te lanzan a un mal sitio
+  // plataformas para coger altura y caer sobre el Remolino (escalonadas)
+  z.pon(6, 80, '###')
+  z.pon(4, 86, '#####')
+  z.pon(6, 92, '###')
+  z.pon(3, 87, 'ooo')
+  z.pon(5, 81, 'o')
+  z.pon(5, 93, 'o')
   // el Remolino flota sobre la isla
-  z.pon(7, 86, 'Y')
-  // plataformas hacia la meta (cruzar el último foso de lava)
-  z.pon(7, 124, '###')
-  z.pon(6, 134, '###')
-  z.pon(7, 144, '###')
+  z.pon(7, 84, 'Y')
+  // plataformas de salida hacia la meta (cada 6, alturas suaves)
+  for (const [r, c] of [[7, 118], [8, 124], [7, 130], [8, 136], [7, 142], [8, 148]]) {
+    z.pon(r, c, '###')
+  }
   // repisa final con Xiana
-  z.rellena(9, 152, W - 1, '#')
-  z.rellena(10, 152, W - 1, '#')
+  z.rellena(9, 154, W - 1, '#')
+  z.rellena(10, 154, W - 1, '#')
   z.pon(8, 162, 'X')
   return z.filas()
 }
