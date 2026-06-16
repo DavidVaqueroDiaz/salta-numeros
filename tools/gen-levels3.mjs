@@ -42,9 +42,9 @@ function aereo({
   const haz = tipo === 'agua' ? '~' : 'L'
   z.rellena(9, 0, W - 1, haz)
   z.rellena(10, 0, W - 1, haz)
-  // repisas sólidas de salida y meta
-  z.rellena(9, 0, 6, '#')
-  z.rellena(10, 0, 6, '#')
+  // repisas sólidas de salida y meta (la de salida, larga, para llegar a la 1ª)
+  z.rellena(9, 0, 9, '#')
+  z.rellena(10, 0, 9, '#')
   z.rellena(9, W - 7, W - 1, '#')
   z.rellena(10, W - 7, W - 1, '#')
   z.pon(8, 3, 'P')
@@ -86,46 +86,47 @@ function aereo({
  * mágico y volar sobre el último foso de lava.
  */
 function barraLevel() {
-  const W = 86
+  const W = 80
   const z = rejilla(11, W)
   z.rellena(9, 0, W - 1, 'L')
   z.rellena(10, 0, W - 1, 'L')
-  z.rellena(9, 0, 12, '#')
-  z.rellena(10, 0, 12, '#')
+  // repisa de salida LARGA: la barra arranca pegada a ella (te subes al instante)
+  z.rellena(9, 0, 13, '#')
+  z.rellena(10, 0, 13, '#')
   z.pon(8, 3, 'P')
-  // barra ancha y lenta que va de un lado a otro
-  z.pon(8, 22, 'n')
-  // monedas e ítems por encima de la barra (saltar a por ellos sin caer)
-  z.pon(5, 16, 'G')
-  z.pon(5, 20, 'o')
-  z.pon(4, 24, 'R')
-  z.pon(5, 28, 'o')
-  z.pon(5, 31, 'H')
-  z.pon(6, 13, 'o')
-  z.pon(6, 35, 'o')
+  z.pon(8, 16, 'n') // barra ancha y lenta, pegada a la repisa
+  // monedas e ítems por encima del recorrido de la barra (saltar sin caer)
+  z.pon(5, 12, 'G')
+  z.pon(6, 10, 'o')
+  z.pon(5, 16, 'o')
+  z.pon(4, 20, 'R')
+  z.pon(5, 24, 'o')
+  z.pon(5, 26, 'H')
   // plataforma para bajarse de la barra (a la derecha)
-  z.pon(7, 38, '###')
+  z.pon(7, 32, '###')
   // MURO mágico: solo se cruza con el SOMBRERO cogido en la barra
-  z.col(44, 0, 10, '#')
-  z.pon(7, 50, '###')
+  z.col(38, 0, 10, '#')
+  z.pon(7, 44, '###')
   // foso de lava ancho: hay que VOLAR con el ARCOÍRIS cogido en la barra
-  // (cols 53-69 son lava, sin plataformas)
-  z.pon(7, 70, '###')
+  // (cols 47-61 son lava, sin plataformas)
+  z.pon(7, 62, '###')
   // repisa final con la meta
-  z.rellena(9, 70, W - 1, '#')
-  z.rellena(10, 70, W - 1, '#')
-  z.pon(8, 78, 'M')
+  z.rellena(9, 64, W - 1, '#')
+  z.rellena(10, 64, W - 1, '#')
+  z.pon(8, 72, 'M')
   return z.filas()
 }
 
-// patrones de alturas de plataforma (para que las fases no se parezcan)
+// Patrones de alturas ALCANZABLES: empiezan bajos (cerca de la repisa) y suben
+// poco a poco (saltos de ≤2 hacia arriba), para poder ir de una a otra.
+// Distintos por fase para que no se parezcan.
 const PATRONES = [
-  [7, 5, 6, 4, 7, 5, 6, 4],
-  [6, 4, 7, 5, 3, 6, 4, 7],
-  [7, 3, 5, 7, 4, 6, 3, 5],
-  [5, 7, 4, 6, 8, 5, 7, 4],
-  [6, 8, 4, 6, 3, 7, 5, 8],
-  [8, 5, 7, 4, 6, 8, 5, 6],
+  [8, 7, 6, 7, 5, 6, 7, 8],
+  [7, 8, 6, 7, 8, 6, 5, 7],
+  [8, 6, 7, 5, 6, 7, 8, 6],
+  [7, 6, 8, 7, 5, 6, 7, 5],
+  [8, 7, 5, 6, 7, 8, 6, 7],
+  [7, 8, 7, 6, 5, 6, 8, 7],
 ]
 
 const NIVELES = {

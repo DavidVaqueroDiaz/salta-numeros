@@ -64,24 +64,25 @@ function estandar({
   // ruta alta: plataformas a distintas alturas para saltar de una a otra
   // (camino alternativo con monedas de premio y algún bicho de reto)
   if (rutaAlta) {
-    // patrón de alturas distinto en cada fase para que no se parezcan
+    // Ruta alta ALCANZABLE: empieza baja (cerca del suelo) y sube/baja poco a
+    // poco (saltos de ≤2 hacia arriba) para que se pueda trepar y recorrer.
+    // Patrón distinto por fase para que no se parezcan.
     const PATRONES = [
-      [5, 3, 6, 4, 5, 3, 6, 4],
-      [3, 6, 4, 7, 3, 5, 6, 4],
-      [6, 4, 3, 5, 7, 4, 6, 3],
-      [4, 7, 5, 3, 6, 4, 7, 5],
-      [7, 4, 6, 3, 5, 7, 4, 6],
+      [8, 7, 6, 7, 8, 6, 7, 8],
+      [8, 6, 7, 8, 6, 5, 7, 6],
+      [7, 8, 6, 7, 5, 6, 8, 7],
+      [8, 7, 5, 6, 7, 8, 6, 7],
+      [7, 6, 8, 7, 6, 5, 7, 8],
     ]
     const alturas = PATRONES[_seedAlta++ % PATRONES.length]
     let i = 0
-    for (let col = 12; col <= W - 20; col += 10) {
+    // plataformas cada 8 columnas (hueco de ~4 tiles: salto cómodo)
+    for (let col = 12; col <= W - 18; col += 8) {
       const r = alturas[i % alturas.length]
       z.pon(r, col, '####')
-      // casi todas las plataformas dan monedas; algunas, un bicho de reto
-      if (i % 4 === 2) z.pon(r - 1, col + 1, 'E')
+      // casi todas dan monedas; alguna, un bicho de reto
+      if (i % 5 === 3) z.pon(r - 1, col + 1, 'E')
       else z.pon(r - 1, col + 1, 'ooo')
-      // moneda escondida más arriba (hay que saltar desde la plataforma)
-      if (i % 3 === 0 && r - 3 >= 0) z.pon(r - 3, col + 1, 'o')
       i++
     }
   }

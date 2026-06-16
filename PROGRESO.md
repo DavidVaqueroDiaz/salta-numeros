@@ -484,6 +484,13 @@ Tema espacio, mates reto3/operacion/mitadDoble.
   lado a otro sobre la lava; sin bajarte saltas a por monedas y los ítems
   (sombrero + arcoíris) que hacen falta al final para cruzar el muro mágico y
   volar sobre el último foso de lava. `check-levels` y build en verde.
+- **Alcanzabilidad arreglada** (el cambio de variedad había dejado plataformas
+  inalcanzables): los patrones de altura ahora **empiezan bajos** (cerca del
+  suelo/repisa) y suben **≤2 tiles** entre plataformas, y la ruta alta del
+  Mundo 2 va cada 8 cols (hueco ~4, salto cómodo). En las fases aéreas la repisa
+  de salida se alargó a la col 9. La **barra** del nivel 90 arranca pegada a la
+  repisa (col 17, a 1 tile) para subirse al instante. Verificado: 1ª plataforma
+  del 71 en fila 8, barra a 1 tile.
 
 ## Ideas en la nevera (decididas NO ahora)
 
