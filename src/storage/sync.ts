@@ -9,6 +9,7 @@ const CLAVES = [
   'salta-numeros-dificultad',
   'salta-numeros-ajustes',
   'salta-numeros-tutoriales',
+  'salta-numeros-cinematicas',
   'salta-numeros-monedero',
   'salta-numeros-personajes',
 ] as const
@@ -121,6 +122,7 @@ export async function cargarDesdeFichero(): Promise<boolean> {
       'salta-numeros-ajustes',
       'salta-numeros-tutoriales',
       'salta-numeros-dificultad',
+      'salta-numeros-cinematicas',
     ] as const) {
       if (datos[clave] && localStorage.getItem(clave) === null) {
         localStorage.setItem(clave, datos[clave])

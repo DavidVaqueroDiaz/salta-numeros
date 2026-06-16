@@ -162,6 +162,14 @@ export class Renderer {
     }
     // invisible: se ve translúcido (el jugador sí se ve a sí mismo)
     if (player.invisibleT > 0) ctx.globalAlpha = 0.35
+    // al ser lanzado por el Remolino, el personaje gira
+    const girando = player.girandoT > 0
+    if (girando) {
+      ctx.save()
+      ctx.translate(player.x + player.w / 2, player.y + player.h / 2)
+      ctx.rotate(player.girandoT * 20)
+      ctx.translate(-(player.x + player.w / 2), -(player.y + player.h / 2))
+    }
     dibujarPersonaje(
       ctx,
       numero,
@@ -169,6 +177,7 @@ export class Renderer {
       player.y + player.h,
       player.mirando,
     )
+    if (girando) ctx.restore()
     ctx.globalAlpha = 1
     // sombrero rojo puesto mientras quede teletransporte
     if (player.teleUsos > 0) {
@@ -768,18 +777,19 @@ export class Renderer {
     }
   }
 
-  /** El Comecubos: bloque gigante enfadado con corazones de vida encima. */
+  /** Dibuja el jefe final del nivel (el Comecubos o el Mago Oscuro). */
   private jefeDibujo(level: Level): void {
     const j = level.jefe
     if (!j) return
     const ctx = this.ctx
-    // bolas de fuego
+    const esMago = j.tipo === 'mago'
+    // proyectiles: orbes mágicos (mago) o bolas de fuego (comecubos)
     for (const b of j.bolas) {
-      ctx.fillStyle = '#f3722c'
+      ctx.fillStyle = esMago ? '#9d4edd' : '#f3722c'
       ctx.beginPath()
       ctx.arc(b.x, b.y, 9, 0, Math.PI * 2)
       ctx.fill()
-      ctx.fillStyle = '#ffd60a'
+      ctx.fillStyle = esMago ? '#e0aaff' : '#ffd60a'
       ctx.beginPath()
       ctx.arc(b.x - b.vx * 0.01, b.y - b.vy * 0.01, 4.5, 0, Math.PI * 2)
       ctx.fill()
@@ -789,9 +799,31 @@ export class Renderer {
     const h = j.h * aplaste
     const y = j.y + j.h - h
 
-    // parpadeo mientras es invulnerable
-    if (j.invulT > 0 && Math.sin(performance.now() / 40) > 0) ctx.globalAlpha = 0.45
+    // parpadeo mientras es invulnerable o se acaba de teletransportar
+    const teleFlash = 'teleFlash' in j ? j.teleFlash : 0
+    if ((j.invulT > 0 || teleFlash > 0) && Math.sin(performance.now() / 40) > 0) {
+      ctx.globalAlpha = 0.45
+    }
 
+    if (j.tipo === 'mago') this.magoCuerpo(j, y, h)
+    else if (j.tipo === 'tornado') this.tornadoCuerpo(j, y, h)
+    else this.comecubosCuerpo(j, y, h)
+
+    if (!j.muerto) {
+      // corazones de vida (común a los dos jefes)
+      ctx.font = '16px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      for (let i = 0; i < j.vidas; i++) {
+        ctx.fillText('❤️', j.x + j.w / 2 + (i - (j.vidas - 1) / 2) * 20, y - 16)
+      }
+    }
+    ctx.globalAlpha = 1
+  }
+
+  /** Cuerpo del Comecubos: bloque morado con dientes y ojos enfadados. */
+  private comecubosCuerpo(j: { x: number; w: number; dir: number; muerto: boolean }, y: number, h: number): void {
+    const ctx = this.ctx
     ctx.fillStyle = '#5a189a'
     ctx.beginPath()
     ctx.roundRect(j.x, y, j.w, h, 10)
@@ -799,7 +831,6 @@ export class Renderer {
     ctx.strokeStyle = '#3c096c'
     ctx.lineWidth = 3
     ctx.stroke()
-    // dientes en la base (¡come cubos!)
     ctx.fillStyle = '#ffffff'
     for (let i = 0; i < 4; i++) {
       const dx = j.x + 8 + i * 12
@@ -810,35 +841,123 @@ export class Renderer {
       ctx.closePath()
       ctx.fill()
     }
+    if (j.muerto) return
+    for (const lado of [-1, 1]) {
+      const ex = j.x + j.w / 2 + lado * 14
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.arc(ex, y + 18, 8, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#c1121f'
+      ctx.beginPath()
+      ctx.arc(ex + j.dir * 2.5, y + 18, 4, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = '#1d1d1d'
+      ctx.lineWidth = 3.5
+      ctx.beginPath()
+      ctx.moveTo(ex - lado * 9, y + 6)
+      ctx.lineTo(ex + lado * 8, y + 11)
+      ctx.stroke()
+    }
+  }
 
+  /** Cuerpo del Remolino: embudo de aire que gira, con cara enfadada arriba. */
+  private tornadoCuerpo(
+    j: { x: number; w: number; muerto: boolean; giro: number },
+    y: number,
+    h: number,
+  ): void {
+    const ctx = this.ctx
+    const cx = j.x + j.w / 2
+    const capas = 8
+    for (let i = 0; i < capas; i++) {
+      const f = i / (capas - 1) // 0 abajo (estrecho) … 1 arriba (ancho)
+      const ey = y + h - f * h
+      const ew = (0.18 + f * 0.95) * j.w
+      const desf = Math.sin(j.giro * 2 + i * 0.7) * ew * 0.14
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(120,150,180,0.92)' : 'rgba(180,205,228,0.92)'
+      ctx.beginPath()
+      ctx.ellipse(cx + desf, ey, ew / 2, Math.max(5, 7 * f), 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
     if (!j.muerto) {
-      // ojos enfadados con cejas
+      const fy = y + h * 0.26
       for (const lado of [-1, 1]) {
-        const ex = j.x + j.w / 2 + lado * 14
         ctx.fillStyle = '#ffffff'
         ctx.beginPath()
-        ctx.arc(ex, y + 18, 8, 0, Math.PI * 2)
+        ctx.arc(cx + lado * 10, fy, 6, 0, Math.PI * 2)
         ctx.fill()
-        ctx.fillStyle = '#c1121f'
+        ctx.fillStyle = '#1d3557'
         ctx.beginPath()
-        ctx.arc(ex + j.dir * 2.5, y + 18, 4, 0, Math.PI * 2)
+        ctx.arc(cx + lado * 10, fy, 3, 0, Math.PI * 2)
         ctx.fill()
-        ctx.strokeStyle = '#1d1d1d'
-        ctx.lineWidth = 3.5
+        ctx.strokeStyle = '#1d3557'
+        ctx.lineWidth = 3
         ctx.beginPath()
-        ctx.moveTo(ex - lado * 9, y + 6)
-        ctx.lineTo(ex + lado * 8, y + 11)
+        ctx.moveTo(cx + lado * 4, fy - 8)
+        ctx.lineTo(cx + lado * 15, fy - 4)
         ctx.stroke()
       }
-      // corazones de vida
-      ctx.font = '16px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      for (let i = 0; i < j.vidas; i++) {
-        ctx.fillText('❤️', j.x + j.w / 2 + (i - (j.vidas - 1) / 2) * 20, y - 16)
+    }
+  }
+
+  /** Cuerpo del Mago Oscuro: túnica morada, gorro de pico con estrella y ojos. */
+  private magoCuerpo(j: { x: number; w: number; muerto: boolean }, y: number, h: number): void {
+    const ctx = this.ctx
+    const cx = j.x + j.w / 2
+    const hombros = y + h * 0.34
+    // túnica (trapecio que se ensancha hacia abajo)
+    ctx.fillStyle = '#3a0ca3'
+    ctx.beginPath()
+    ctx.moveTo(cx, hombros)
+    ctx.lineTo(j.x + j.w * 0.95, y + h)
+    ctx.lineTo(j.x + j.w * 0.05, y + h)
+    ctx.closePath()
+    ctx.fill()
+    ctx.strokeStyle = '#240a6b'
+    ctx.lineWidth = 2.5
+    ctx.stroke()
+    // estrellitas de la túnica
+    ctx.fillStyle = '#ffd60a'
+    ctx.font = '9px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('✦', cx - 7, y + h * 0.72)
+    ctx.fillText('✦', cx + 8, y + h * 0.82)
+    if (!j.muerto) {
+      // ojos brillantes bajo el ala del gorro
+      for (const lado of [-1, 1]) {
+        const ex = cx + lado * 9
+        ctx.fillStyle = '#e0aaff'
+        ctx.beginPath()
+        ctx.arc(ex, hombros + 4, 5, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#3c096c'
+        ctx.beginPath()
+        ctx.arc(ex, hombros + 4, 2.3, 0, Math.PI * 2)
+        ctx.fill()
       }
     }
-    ctx.globalAlpha = 1
+    // ala del gorro
+    ctx.fillStyle = '#240a6b'
+    ctx.beginPath()
+    ctx.ellipse(cx, hombros - 1, j.w * 0.5, 5, 0, 0, Math.PI * 2)
+    ctx.fill()
+    // cono del gorro (un poco torcido)
+    ctx.fillStyle = '#5a189a'
+    ctx.beginPath()
+    ctx.moveTo(cx + 5, y - 6)
+    ctx.lineTo(j.x + j.w * 0.74, hombros - 1)
+    ctx.lineTo(j.x + j.w * 0.26, hombros - 1)
+    ctx.closePath()
+    ctx.fill()
+    ctx.strokeStyle = '#240a6b'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    // estrella de la punta
+    ctx.fillStyle = '#ffd60a'
+    ctx.font = '12px sans-serif'
+    ctx.fillText('★', cx + 5, y - 1)
   }
 
   /** Xiana, estilo dibujo animado: ojazos, flequillo y coletas con gomas. */

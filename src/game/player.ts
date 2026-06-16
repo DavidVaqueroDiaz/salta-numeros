@@ -33,6 +33,8 @@ export class Player {
   teleUsos = 0
   /** segundos restantes de estrella invencible (atropella bichos) */
   estrellaT = 0
+  /** segundos restantes girando por el ataque del Remolino (solo visual) */
+  girandoT = 0
   /** evita rebotar entre tubos al instante */
   tuboCooldownT = 0
   /** ¿está nadando ahora mismo? (lo rellena update) */
@@ -69,11 +71,21 @@ export class Player {
     this.puntoRespawn = { x, y }
   }
 
+  /** Empuje externo (el Remolino te lanza por los aires). */
+  empujar(vx: number, vy: number): void {
+    this.vx = vx
+    this.vy = vy
+    this.enSuelo = false
+    this.plataforma = null
+    this.girandoT = 0.6
+  }
+
   respawn(): void {
     this.x = this.puntoRespawn.x
     this.y = this.puntoRespawn.y
     this.vy = 0
     this.vx = 0
+    this.girandoT = 0
     this.enSuelo = false
     this.saltosUsados = 0
     this.plataforma = null
@@ -89,6 +101,7 @@ export class Player {
     this.invisibleT = Math.max(0, this.invisibleT - dt)
     this.volarT = Math.max(0, this.volarT - dt)
     this.estrellaT = Math.max(0, this.estrellaT - dt)
+    this.girandoT = Math.max(0, this.girandoT - dt)
     this.tuboCooldownT = Math.max(0, this.tuboCooldownT - dt)
     this.enAgua = level.esAgua(
       Math.floor((this.x + this.w / 2) / TILE),

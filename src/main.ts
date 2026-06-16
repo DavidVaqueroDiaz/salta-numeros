@@ -7,7 +7,7 @@ import { Level, TILE, seSolapan, type Door } from './game/level'
 import { CuboVolando } from './game/entities'
 import { Player } from './game/player'
 import { sonido } from './game/sound'
-import { NIVELES, NIVEL_FINAL } from './levels/index'
+import { NIVELES, esNivelFinal } from './levels/index'
 import { generarPregunta, puertaAjustada } from './math/questions'
 import { abrirPuertaMatematica } from './ui/mathDoor'
 import { dificultadActual, paramsDificultad } from './game/dificultad'
@@ -28,13 +28,16 @@ import {
 } from './storage/sync'
 import { guardarResultado } from './storage/progress'
 import { Intro } from './ui/intro'
+import { Cinematica } from './ui/cinematica2'
 
 registerSW({ immediate: true })
 
-type Estado = 'intro' | 'menu' | 'jugando' | 'puerta' | 'resultados'
+type Estado = 'intro' | 'cinematica' | 'menu' | 'jugando' | 'puerta' | 'resultados'
 
 let estado: Estado = 'intro'
 let intro: Intro | null = new Intro()
+let cinematica2: Cinematica | null = null
+let trasCinematica: (() => void) | null = null
 let personajeEquipado = cargarPersonajes().equipado
 let level: Level | null = null
 let nivelActual = 1
@@ -48,9 +51,10 @@ const canvasJuego = document.getElementById('game') as HTMLCanvasElement
 const renderer = new Renderer(canvasJuego)
 setupInput()
 
-// La intro se salta tocando en cualquier parte
+// La intro y la cinemática se saltan tocando en cualquier parte
 window.addEventListener('pointerdown', () => {
   if (estado === 'intro' && intro) intro.terminado = true
+  if (estado === 'cinematica' && cinematica2) cinematica2.terminado = true
 })
 
 const hud = document.getElementById('hud')!
@@ -95,7 +99,20 @@ function irAlMenu(): void {
   controles.classList.add('hidden')
   document.getElementById('poderes')!.classList.add('hidden')
   ocultarPantallas()
-  mostrarMenu(empezarNivel)
+  mostrarMenu(empezarNivel, reproducirCinematica)
+}
+
+/** Reproduce la cinemática de un mundo (al elegirlo en el selector) y sigue. */
+function reproducirCinematica(mundo: number, despues: () => void): void {
+  personajeEquipado = cargarPersonajes().equipado
+  cinematica2 = new Cinematica(mundo, personajeEquipado)
+  trasCinematica = despues
+  estado = 'cinematica'
+  level = null
+  hud.classList.add('hidden')
+  controles.classList.add('hidden')
+  document.getElementById('poderes')!.classList.add('hidden')
+  ocultarPantallas()
 }
 
 /**
@@ -212,7 +229,7 @@ function terminarNivel(): void {
       monedas,
       totalMonedas: level.monedas.length,
       titulo:
-        nivelActual === NIVEL_FINAL ? '❤️ ¡Has salvado a Xiana!' : undefined,
+        esNivelFinal(nivelActual) ? '❤️ ¡Has salvado a Xiana!' : undefined,
     },
     () => empezarNivel(nivelActual),
     irAlMenu,
@@ -366,6 +383,17 @@ function update(dt: number): void {
     }
     return
   }
+  if (estado === 'cinematica' && cinematica2) {
+    cinematica2.update(dt)
+    if (cinematica2.terminado) {
+      cinematica2 = null
+      estado = 'menu'
+      const cb = trasCinematica
+      trasCinematica = null
+      cb?.()
+    }
+    return
+  }
   if (estado !== 'jugando' || !level) return
   tiempoMs += dt * 1000
   hudTimer.textContent = formatearTiempo(tiempoMs)
@@ -487,6 +515,14 @@ function update(dt: number): void {
             estado = 'jugando'
           })
         }
+      } else if (jefe.tipo === 'tornado') {
+        // el Remolino te hace girar y te lanza fuera de la plataforma
+        if (!estrella && jefe.flingT <= 0) {
+          const dir = player.x + player.w / 2 < jefe.x + jefe.w / 2 ? -1 : 1
+          player.empujar(dir * 460, -440)
+          jefe.flingT = 1.1
+          sonido.golpe()
+        }
       } else if (!estrella) {
         morir() // con estrella no te hace daño, pero tampoco le dañas a él
       }
@@ -598,6 +634,7 @@ document.getElementById('game')!.addEventListener('pointerdown', (e) => {
 
 function render(): void {
   if (estado === 'intro' && intro) intro.draw(canvasJuego)
+  else if (estado === 'cinematica' && cinematica2) cinematica2.draw(canvasJuego)
   else if (level) renderer.draw(level, player, personajeEquipado)
 }
 
@@ -610,7 +647,7 @@ void cargarDesdeFichero().then((habia) => {
   if (!habia) return
   aplicarAjustes()
   personajeEquipado = cargarPersonajes().equipado
-  if (estado === 'menu') mostrarMenu(empezarNivel) // refresca candados/estrellas
+  if (estado === 'menu') mostrarMenu(empezarNivel, reproducirCinematica) // refresca
 })
 
 // Al cerrar u ocultar la ventana, vuelca el progreso al fichero

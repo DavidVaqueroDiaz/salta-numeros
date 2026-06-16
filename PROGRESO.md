@@ -365,6 +365,109 @@ grandes y juntos (caben en el cubo de la cabeza); brazos, borde de ojos y melena
 con casos propios del 7. Verificado por muestreo de píxeles del mini-canvas de
 la tienda (los 6 colores del cuerpo coinciden) y captura ampliada.
 
+## MUNDO 2: 35 fases nuevas + el Mago Oscuro (2026-06-15)
+
+Sistema de **mundos** con flecha ▶ en el menú: al pasarte el jefe de un mundo
+aparece la flecha para avanzar al siguiente (◀ para volver). Funciona en los
+tres modos (el progreso sigue siendo por modo). `index.ts`: `MUNDOS` = [{1-35,
+jefe 36}, {37-71, jefe 72}], `esNivelFinal()`, `mundoDe()`; `TOTAL_NIVELES=35`
+pasa a ser "fases por mundo". El desbloqueo encadena por número (`progreso[n-1]`),
+así 37 se abre al completar el 36. El menú (`screens.ts`) tiene `mundoVista` y
+pinta la rejilla/jefe del mundo en vista; la flecha ▶ se activa solo si el jefe
+del mundo actual está hecho (o con "desbloquear todo").
+
+- **35 fases nuevas (37-71)** generadas con `tools/gen-levels2.mjs` (mismo
+  estilo que gen-levels). Zonas: 37-41 **agua** (buceo, muchos peces),
+  42-46 **lava** (parpadeantes/móviles/caedizas), 47-51 **obstáculos**
+  (saltar entre plataformas, móviles, caedizas), 52-56 **hielo**, 57-61
+  **espacio** (gravedad lunar), 62-66 **laberinto** (muros que se trepan y
+  muros mágicos con sombrero 'H'), 67-71 **mezcla** (todo junto). Mates altas
+  (reto2/reto3/operacion/mitadDoble). Los bichos extra y la subida de mates
+  siguen escalando por dificultad en tiempo de ejecución.
+- **Nuevo jefe: el Mago Oscuro** (`boss.ts`, clase `MagoOscuro`, char `'Z'`):
+  se teletransporta sin parar (`buscarSitio`), invoca enemigos (tope 5 vivos) y
+  lanza **rayos mágicos** rectos hacia el jugador (`RayoMagico`). Pisotón→reto o
+  cubo de Rubik le quitan corazón; vidas = `jefeVidas` (3 normal / 5 Difícil).
+  Comparte interfaz con `Jefe` vía `type JefeFinal` y discriminador `tipo`
+  ('comecubos' | 'mago'); `level.jefe: JefeFinal`. Fase `nivelfinal2.ts` (72,
+  castillo nocturno) con Xiana, puerta, ítems y cubos en la arena.
+- **Renderer**: `jefeDibujo` se parte en `comecubosCuerpo` y `magoCuerpo`
+  (túnica morada, gorro de pico con estrella, ojos brillantes); los proyectiles
+  se pintan como orbes morados (mago) o bolas de fuego (comecubos).
+- `check-levels.mjs`: la 'Z' (mago) también debe pisar suelo. Las 71 fases
+  pasan el validador; `npm run build` en verde (98 módulos).
+- Verificado en preview: flecha ▶ bloqueada hasta el jefe 36 y desbloqueada
+  tras él; Mundo 2 muestra 37-71 + jefe; fase de agua con peces; el Mago se
+  teletransporta/invoca/lanza rayos y pierde vida con el cubo.
+
+### Retoques tras pruebas de Vaquero (2026-06-15)
+
+- **Fases con varios caminos a distintas alturas** (feedback "demasiado
+  fáciles"): `estandar` añade ahora una **ruta alta** (`rutaAlta`, ON por
+  defecto) de plataformas escalonadas (filas 3-6, cada 10 cols) con monedas de
+  premio y enemigos de reto — se salta de una a otra como circuito de
+  obstáculos, además del camino de suelo.
+- **Mago Oscuro más grande** (78×100, antes 48×62) y **al final de la fase**:
+  `nivelfinal2` pasa a 190 cols con recorrido de obstáculos (barrancos con
+  plataformas, foso de lava con parpadeantes, puerta, vigilantes, checkpoint)
+  y el Mago ('Z') esperando en col 165 con Xiana al fondo (col 182).
+- **Cinemática del Mundo 2** (`src/ui/cinematica2.ts`, clase `CinematicaMundo2`):
+  al pulsar la flecha ▶ se reproduce (estado `'cinematica'` en main.ts, se salta
+  tocando): tu personaje equipado y Xiana juegan en un parque → aparece el Mago
+  → con un hechizo (rayo + destellos) la mete en una jaula → se van volando
+  arriba-derecha. `screens.ts` lanza el callback `cbCinematica` al avanzar al
+  Mundo 2; al terminar, muestra el menú del Mundo 2. Verificado en preview.
+
+### Selector de mundos, cinemáticas por mundo y más monedas (2026-06-15)
+
+Segunda ronda de feedback de Vaquero:
+- **Selector de mundos tipo "landing" espacial** (`screens.ts: mostrarLanding`):
+  sustituye a las flechas ◀▶. Botón 🪐 en el menú abre un panel espacial con un
+  **planeta por mundo** y el **monstruo del jefe final encima** (Comecubos /
+  Mago Oscuro, dibujados con `dibujarIconoJefe`/`dibujarPlaneta`), más planetas
+  **"✨ Próximamente"** (mundos 3-4 bloqueados). Elegir un mundo desbloqueado
+  entra a su rejilla; los bloqueados muestran "Pásate el Mundo N".
+- **Cinemática propia por mundo** (`cinematica2.ts` ahora clase `Cinematica`
+  con `mundo` + `personaje`): Mundo 1 = los dos amigos juegan y empieza la
+  aventura (~7,5 s); Mundo 2 = secuestro del Mago (**14 s, más lenta** para leer
+  los subtítulos). Se reproduce **solo la primera vez** que se elige cada mundo
+  (`cinematicaVista`/`marcarCinematicaVista` en settings.ts, clave
+  `salta-numeros-cinematicas`, sincronizada). main.ts: `reproducirCinematica(mundo, despues)`.
+- **Más monedas, escondidas y difíciles** (`gen-levels2.mjs`): la ruta alta da
+  monedas en casi todas las plataformas + monedas altas escondidas; monedas
+  flotando sobre los barrancos; y en las fases de agua, monedas en el fondo (hay
+  que bucear). Verificado: niv. 47 ≈ 32 monedas, niv. 52 ≈ 27.
+- Verificado en preview: selector con 4 planetas y monstruos; elegir Mundo 2
+  (1ª vez) lanza su cinemática de 14 s y entra; build + check-levels en verde.
+
+## MUNDO 3: fases aéreas + el Remolino (2026-06-15)
+
+Tercer mundo (niveles 73-107 + jefe 108), **fases aéreas**: casi sin suelo —
+el fondo es lava o agua llena de peces que atacan; se avanza **saltando de
+plataforma en plataforma**. `tools/gen-levels3.mjs` con el constructor `aereo`
+(repisas de salida/meta, camino de plataformas a distintas alturas con saltos
+exigentes, móviles/caedizas/parpadeantes, monedas altas escondidas, peces en el
+agua, puertas sobre plataformas anchas). Zonas: lava (73-78), agua+peces
+(79-84), lava+mecánicas (85-90), agua difícil (91-96), tormenta final (97-107).
+Tema espacio, mates reto3/operacion/mitadDoble.
+
+- **Nuevo jefe: el Remolino** (`boss.ts` clase `Tornado`, char `'Y'`,
+  `nivelfinal3.ts`=108): flota en una arena aérea sobre lava y persigue al
+  jugador; su ataque al tocarte te hace **girar y te lanza por los aires**
+  (main.ts: `player.empujar(vx,vy)` + `girandoT`; el peligro es caer a la lava).
+  Para dañarlo: subir por las plataformas y caerle ENCIMA (pisotón→mates) o
+  con cubo de Rubik. Comparte interfaz vía `type JefeFinal` + `tipo='tornado'`.
+- `MUNDOS` añade `{73-107, jefe 108}`; el selector "landing" muestra ya 3
+  planetas (Mundo 3 = "Cielo y tormenta" con icono de remolino) + 2
+  "Próximamente". **Cinemática del Mundo 3** (cielo de tormenta: el Remolino se
+  lleva a Xiana a las nubes, ~9 s).
+- `check-levels.mjs`: el agua '~' del fondo cuenta como suelo (no caída al
+  vacío), para validar las fases aéreas con mar.
+- Renderer: `tornadoCuerpo` (embudo girando con cara) y giro del personaje al
+  ser lanzado. Verificado en preview: fase 79 (agua, 10 peces, plataformas),
+  jefe 108 lanza/daña (pisotón→mates y cubo 3→2); build (253 KB) y check-levels
+  en verde.
+
 ## Ideas en la nevera (decididas NO ahora)
 
 - Cinemática de cierre + contador total de estrellas con premio al 100 %.

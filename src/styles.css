@@ -429,6 +429,117 @@ body.controles-pequenos #ctl-jump {
   letter-spacing: 1px;
 }
 
+/* Navegación entre mundos (◀ Mundo N ▶) */
+.mundo-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 0 10px;
+}
+
+.mundo-titulo {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--texto);
+  min-width: 130px;
+  text-align: center;
+}
+
+.mundo-flecha {
+  border: none;
+  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--blanco);
+  background: var(--verde-ok);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+}
+
+.mundo-flecha:disabled {
+  background: #b0b8c4;
+  cursor: default;
+}
+
+.mundo-flecha:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+/* Selector de mundos (landing espacial con planetas) */
+.landing {
+  width: min(92vw, 720px);
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 24px;
+  padding: 20px;
+  background:
+    radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+    radial-gradient(2px 2px at 70% 20%, #fff, transparent),
+    radial-gradient(2px 2px at 45% 60%, #fff, transparent),
+    radial-gradient(2px 2px at 85% 70%, #fff, transparent),
+    radial-gradient(2px 2px at 30% 85%, #fff, transparent),
+    linear-gradient(160deg, #0b1437, #2a1a5e 60%, #41207e);
+  box-shadow: var(--sombra);
+}
+
+.landing-titulo {
+  color: #fff;
+  font-size: 30px;
+  font-weight: 900;
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.planetas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.planeta-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 150px;
+  padding: 10px 6px 12px;
+  border: 3px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+}
+
+.planeta-card:not(.bloqueado):not(.proximamente):active {
+  transform: translateY(3px);
+}
+
+.planeta-card:not(.bloqueado):not(.proximamente):hover {
+  border-color: #ffd60a;
+  background: rgba(255, 214, 10, 0.12);
+}
+
+.planeta-card.bloqueado,
+.planeta-card.proximamente {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.planeta-nombre {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.planeta-sub {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
 /* Rejilla de niveles (35 niveles: 7×5) */
 .niveles {
   display: grid;

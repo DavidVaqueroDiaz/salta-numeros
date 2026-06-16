@@ -64,3 +64,27 @@ export function marcarTutorialVisto(tipo: string): void {
     // sin almacenamiento: se repetirá, no pasa nada
   }
 }
+
+// --- Cinemáticas de mundo vistas (una por mundo, solo la primera vez) ---
+
+const CLAVE_CINE = 'salta-numeros-cinematicas'
+
+export function cinematicaVista(mundo: number): boolean {
+  try {
+    const raw = localStorage.getItem(CLAVE_CINE)
+    return raw ? JSON.parse(raw)[mundo] === true : false
+  } catch {
+    return false
+  }
+}
+
+export function marcarCinematicaVista(mundo: number): void {
+  try {
+    const raw = localStorage.getItem(CLAVE_CINE)
+    const vistas = raw ? JSON.parse(raw) : {}
+    vistas[mundo] = true
+    localStorage.setItem(CLAVE_CINE, JSON.stringify(vistas))
+  } catch {
+    // sin almacenamiento: se repetirá, no pasa nada
+  }
+}

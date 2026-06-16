@@ -1,6 +1,12 @@
-import { COLORES, NIVELES, NIVEL_FINAL, TOTAL_NIVELES } from '../levels/index'
+import { COLORES, NIVELES, MUNDOS } from '../levels/index'
 import { cargarProgreso, nivelDesbloqueado } from '../storage/progress'
-import { cargarAjustes, guardarAjustes, type Ajustes } from '../storage/settings'
+import {
+  cargarAjustes,
+  guardarAjustes,
+  cinematicaVista,
+  marcarCinematicaVista,
+  type Ajustes,
+} from '../storage/settings'
 import { setSonidoActivado } from '../game/sound'
 import {
   cargarMonedero,
@@ -10,7 +16,7 @@ import {
   precioPersonaje,
 } from '../storage/shop'
 import { guardarEnFichero } from '../storage/sync'
-import { dibujarPersonaje, FORMAS } from '../engine/character'
+import { dibujarPersonaje, FORMAS, oscurecer } from '../engine/character'
 import {
   dificultadActual,
   fijarDificultad,
@@ -19,6 +25,11 @@ import {
 } from '../game/dificultad'
 
 const CONTRASENA_DESBLOQUEO = '1566'
+
+/** Mundo que se está viendo en el menú (1 o 2). La flecha ▶ avanza al siguiente. */
+let mundoVista = 1
+/** Callback para reproducir la cinemática de un mundo (lo da main.ts). */
+let cbCinematica: ((mundo: number, despues: () => void) => void) | null = null
 
 /** Aplica los ajustes guardados (al arrancar y al cambiarlos). */
 export function aplicarAjustes(ajustes: Ajustes = cargarAjustes()): void {
@@ -36,7 +47,11 @@ export function estrellasTexto(n: number): string {
 }
 
 /** Pinta el menú principal con la rejilla de niveles. */
-export function mostrarMenu(alElegir: (nivel: number) => void): void {
+export function mostrarMenu(
+  alElegir: (nivel: number) => void,
+  alCinematica?: (mundo: number, despues: () => void) => void,
+): void {
+  if (alCinematica) cbCinematica = alCinematica
   const pantalla = document.getElementById('screen-menu')!
   const dificultad = dificultadActual()
   const progreso = cargarProgreso(dificultad)
@@ -62,15 +77,36 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
     btn.addEventListener('click', () => {
       if (m === dificultad) return
       fijarDificultad(m)
+      mundoVista = 1 // cada modo empieza viendo el Mundo 1
       mostrarMenu(alElegir) // re-pinta con el progreso de ese modo
     })
     modos.appendChild(btn)
   }
 
+  // ¿qué mundo se ve? (clampado por si el modo no lo tiene desbloqueado)
+  if (mundoVista > MUNDOS.length) mundoVista = MUNDOS.length
+  const finalAnterior = mundoVista > 1 ? MUNDOS[mundoVista - 2].final : 0
+  const mundoAccesible = mundoVista === 1 || modoAbierto || progreso[finalAnterior]?.completed
+  if (!mundoAccesible) mundoVista = 1
+  const mundo = MUNDOS[mundoVista - 1]
+
+  // Título del mundo + botón para abrir el selector de mundos (la "landing")
+  const nav = document.createElement('div')
+  nav.className = 'mundo-nav'
+  const etiquetaMundo = document.createElement('span')
+  etiquetaMundo.className = 'mundo-titulo'
+  etiquetaMundo.textContent = `🗺️ Mundo ${mundo.num}`
+  const btnMundos = document.createElement('button')
+  btnMundos.className = 'mundo-flecha'
+  btnMundos.textContent = '🪐'
+  btnMundos.title = 'Elegir mundo'
+  btnMundos.addEventListener('click', () => mostrarLanding(alElegir))
+  nav.append(etiquetaMundo, btnMundos)
+
   const rejilla = document.createElement('div')
   rejilla.className = 'niveles'
 
-  for (let n = 1; n <= TOTAL_NIVELES; n++) {
+  for (let n = mundo.primero; n <= mundo.ultimo; n++) {
     const btn = document.createElement('button')
     btn.className = 'nivel-btn'
     const desbloqueado = (modoAbierto || nivelDesbloqueado(n, progreso)) && n in NIVELES
@@ -86,24 +122,24 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
       btn.addEventListener('click', () => alElegir(n))
     } else {
       btn.classList.add('bloqueado')
-      btn.textContent = n in NIVELES || n <= TOTAL_NIVELES ? '🔒' : '?'
+      btn.textContent = '🔒'
       btn.disabled = true
     }
     rejilla.appendChild(btn)
   }
 
-  // Botón del nivel final: se abre al completar el nivel 10
+  // Botón del jefe final del mundo (se abre al completar su última fase)
   const btnFinal = document.createElement('button')
   btnFinal.className = 'final-btn'
-  if ((modoAbierto || nivelDesbloqueado(NIVEL_FINAL, progreso)) && NIVEL_FINAL in NIVELES) {
-    const hecho = progreso[NIVEL_FINAL]?.completed
+  if ((modoAbierto || nivelDesbloqueado(mundo.final, progreso)) && mundo.final in NIVELES) {
+    const hecho = progreso[mundo.final]?.completed
     btnFinal.textContent = hecho
-      ? `⭐ ¡Salva a Xiana otra vez! ${estrellasTexto(progreso[NIVEL_FINAL]?.stars ?? 0)}`
-      : '⭐ NIVEL FINAL: ¡salva a Xiana!'
-    btnFinal.addEventListener('click', () => alElegir(NIVEL_FINAL))
+      ? `⭐ ¡Salva a Xiana otra vez! ${estrellasTexto(progreso[mundo.final]?.stars ?? 0)}`
+      : '⭐ JEFE FINAL: ¡salva a Xiana!'
+    btnFinal.addEventListener('click', () => alElegir(mundo.final))
   } else {
     btnFinal.classList.add('bloqueado')
-    btnFinal.textContent = `🔒 Completa el nivel ${TOTAL_NIVELES} para salvar a Xiana`
+    btnFinal.textContent = `🔒 Completa la fase ${mundo.ultimo} para salvar a Xiana`
     btnFinal.disabled = true
   }
 
@@ -166,8 +202,232 @@ export function mostrarMenu(alElegir: (nivel: number) => void): void {
     fila.appendChild(btnPantalla)
   }
 
-  pantalla.append(titulo, subtitulo, modos, rejilla, btnFinal, fila)
+  pantalla.append(titulo, subtitulo, modos, nav, rejilla, btnFinal, fila)
   pantalla.classList.remove('hidden')
+}
+
+/** Dibuja un planeta de colores con un brillo y un anillo opcional. */
+function dibujarPlaneta(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string): void {
+  const g = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.2, cx, cy, r)
+  g.addColorStop(0, '#ffffff')
+  g.addColorStop(0.25, color)
+  g.addColorStop(1, oscurecer(color, 0.55))
+  ctx.fillStyle = g
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
+  ctx.fill()
+  // manchas/cráteres
+  ctx.fillStyle = oscurecer(color, 0.7)
+  ctx.beginPath()
+  ctx.arc(cx + r * 0.3, cy + r * 0.25, r * 0.18, 0, Math.PI * 2)
+  ctx.arc(cx - r * 0.35, cy + r * 0.4, r * 0.12, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** Icono del jefe final de cada mundo, para ponerlo encima del planeta. */
+function dibujarIconoJefe(ctx: CanvasRenderingContext2D, mundo: number, cx: number, cy: number, s: number): void {
+  if (mundo === 3) {
+    // Remolino (embudo girando)
+    const capas = 6
+    for (let i = 0; i < capas; i++) {
+      const f = i / (capas - 1)
+      const ey = cy + s * 0.45 - f * s * 0.9
+      const ew = (0.16 + f * 0.7) * s
+      ctx.fillStyle = i % 2 === 0 ? '#7896b4' : '#bcd2e4'
+      ctx.beginPath()
+      ctx.ellipse(cx + (i % 2 ? 3 : -3), ey, ew / 2, s * 0.06 + 2, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    for (const lado of [-1, 1]) {
+      ctx.fillStyle = '#fff'
+      ctx.beginPath()
+      ctx.arc(cx + lado * s * 0.13, cy - s * 0.18, s * 0.08, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#1d3557'
+      ctx.beginPath()
+      ctx.arc(cx + lado * s * 0.13, cy - s * 0.18, s * 0.04, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    return
+  }
+  if (mundo === 2) {
+    // Mago Oscuro
+    ctx.fillStyle = '#3a0ca3'
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - s * 0.1)
+    ctx.lineTo(cx + s * 0.4, cy + s * 0.5)
+    ctx.lineTo(cx - s * 0.4, cy + s * 0.5)
+    ctx.closePath()
+    ctx.fill()
+    for (const lado of [-1, 1]) {
+      ctx.fillStyle = '#e0aaff'
+      ctx.beginPath()
+      ctx.arc(cx + lado * s * 0.15, cy + s * 0.05, s * 0.09, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillStyle = '#240a6b'
+    ctx.beginPath()
+    ctx.ellipse(cx, cy - s * 0.08, s * 0.42, s * 0.06, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#5a189a'
+    ctx.beginPath()
+    ctx.moveTo(cx + s * 0.06, cy - s * 0.6)
+    ctx.lineTo(cx + s * 0.22, cy - s * 0.08)
+    ctx.lineTo(cx - s * 0.22, cy - s * 0.08)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = '#ffd60a'
+    ctx.font = `${Math.round(s * 0.22)}px sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('★', cx + s * 0.06, cy - s * 0.55)
+  } else {
+    // Comecubos
+    ctx.fillStyle = '#5a189a'
+    ctx.beginPath()
+    ctx.roundRect(cx - s * 0.4, cy - s * 0.4, s * 0.8, s * 0.8, s * 0.14)
+    ctx.fill()
+    ctx.strokeStyle = '#3c096c'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    for (const lado of [-1, 1]) {
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.arc(cx + lado * s * 0.16, cy - s * 0.08, s * 0.12, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#c1121f'
+      ctx.beginPath()
+      ctx.arc(cx + lado * s * 0.16, cy - s * 0.08, s * 0.06, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillStyle = '#ffffff'
+    for (let i = 0; i < 3; i++) {
+      const dx = cx - s * 0.24 + i * s * 0.24
+      ctx.beginPath()
+      ctx.moveTo(dx, cy + s * 0.36)
+      ctx.lineTo(dx + s * 0.08, cy + s * 0.2)
+      ctx.lineTo(dx + s * 0.16, cy + s * 0.36)
+      ctx.closePath()
+      ctx.fill()
+    }
+  }
+}
+
+/**
+ * Selector de mundos ("landing" espacial): cada mundo es un planeta con el
+ * monstruo de su jefe final encima. Muestra los mundos que existen y otros que
+ * llegarán próximamente. Al elegir un mundo se reproduce su cinemática (la
+ * primera vez) y se entra a su rejilla de niveles.
+ */
+function mostrarLanding(alElegir: (nivel: number) => void): void {
+  const dialogo = document.getElementById('dialogo')!
+  const progreso = cargarProgreso(dificultadActual())
+  const modoAbierto = cargarAjustes().desbloqueado
+  dialogo.innerHTML = ''
+  const caja = document.createElement('div')
+  caja.className = 'landing'
+
+  const titulo = document.createElement('p')
+  titulo.className = 'landing-titulo'
+  titulo.textContent = '🪐 Elige un mundo'
+  caja.appendChild(titulo)
+
+  const galaxia = document.createElement('div')
+  galaxia.className = 'planetas'
+
+  const COLORES_PLANETA = ['#52b788', '#9d4edd', '#4cc9f0', '#f77f00']
+  const NOMBRES = ['Pradera y castillo', 'Magia y misterio', 'Cielo y tormenta', '???']
+
+  // mundos reales (existentes)
+  MUNDOS.forEach((m, i) => {
+    const desbloqueado =
+      m.num === 1 || modoAbierto || progreso[MUNDOS[i - 1]?.final]?.completed
+    const hecho = progreso[m.final]?.completed
+    const card = document.createElement('button')
+    card.className = 'planeta-card' + (desbloqueado ? '' : ' bloqueado')
+
+    const lienzo = document.createElement('canvas')
+    lienzo.width = 130
+    lienzo.height = 140
+    const ctx = lienzo.getContext('2d')!
+    dibujarPlaneta(ctx, 65, 95, 42, COLORES_PLANETA[i % COLORES_PLANETA.length])
+    if (desbloqueado) dibujarIconoJefe(ctx, m.num, 65, 44, 52)
+    else {
+      ctx.fillStyle = '#ced4da'
+      ctx.font = 'bold 48px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('🔒', 65, 44)
+    }
+
+    const etiqueta = document.createElement('span')
+    etiqueta.className = 'planeta-nombre'
+    etiqueta.textContent = desbloqueado
+      ? `Mundo ${m.num}${hecho ? ' ✓' : ''}`
+      : `Mundo ${m.num} 🔒`
+    const sub = document.createElement('span')
+    sub.className = 'planeta-sub'
+    sub.textContent = desbloqueado
+      ? NOMBRES[i]
+      : `Pásate el Mundo ${m.num - 1}`
+
+    card.append(lienzo, etiqueta, sub)
+    if (desbloqueado) {
+      card.addEventListener('click', () => {
+        mundoVista = m.num
+        cerrarDialogo()
+        const entrar = (): void => mostrarMenu(alElegir)
+        if (!cinematicaVista(m.num) && cbCinematica) {
+          marcarCinematicaVista(m.num)
+          cbCinematica(m.num, entrar)
+        } else {
+          entrar()
+        }
+      })
+    } else {
+      card.disabled = true
+    }
+    galaxia.appendChild(card)
+  })
+
+  // planetas "próximamente"
+  for (let k = 0; k < 2; k++) {
+    const card = document.createElement('button')
+    card.className = 'planeta-card proximamente'
+    card.disabled = true
+    const lienzo = document.createElement('canvas')
+    lienzo.width = 130
+    lienzo.height = 140
+    const ctx = lienzo.getContext('2d')!
+    dibujarPlaneta(ctx, 65, 95, 42, '#6c757d')
+    ctx.fillStyle = '#f8f9fa'
+    ctx.font = 'bold 40px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('?', 65, 44)
+    const etiqueta = document.createElement('span')
+    etiqueta.className = 'planeta-nombre'
+    etiqueta.textContent = `Mundo ${MUNDOS.length + 1 + k}`
+    const sub = document.createElement('span')
+    sub.className = 'planeta-sub'
+    sub.textContent = '✨ Próximamente'
+    card.append(lienzo, etiqueta, sub)
+    galaxia.appendChild(card)
+  }
+
+  caja.appendChild(galaxia)
+
+  const cerrar = document.createElement('button')
+  cerrar.className = 'boton-grande'
+  cerrar.textContent = 'Cerrar'
+  cerrar.addEventListener('click', () => {
+    cerrarDialogo()
+    mostrarMenu(alElegir)
+  })
+  caja.appendChild(cerrar)
+
+  dialogo.appendChild(caja)
+  dialogo.classList.remove('hidden')
 }
 
 /** Tienda: se juega con el 1; los demás personajes se compran con monedas. */

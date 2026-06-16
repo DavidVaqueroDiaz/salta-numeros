@@ -13,7 +13,7 @@ import {
   Vigilante,
   type PlataformaPisable,
 } from './entities'
-import { Jefe, Xiana } from './boss'
+import { Jefe, MagoOscuro, Tornado, Xiana, type JefeFinal } from './boss'
 import { paramsDificultad } from './dificultad'
 
 export const TILE = 32
@@ -64,7 +64,7 @@ export class Level {
   readonly items: ItemPoder[] = []
   readonly cubosVolando: CuboVolando[] = []
   readonly parpadeantes: PlataformaParpadeante[] = []
-  jefe: Jefe | null = null
+  jefe: JefeFinal | null = null
   xiana: Xiana | null = null
 
   constructor(data: LevelData) {
@@ -105,6 +105,10 @@ export class Level {
           this.checkpoints.push(new Checkpoint(c, r))
         } else if (ch === 'B') {
           this.jefe = new Jefe(c, r)
+        } else if (ch === 'Z') {
+          this.jefe = new MagoOscuro(c, r) // jefe del Mundo 2
+        } else if (ch === 'Y') {
+          this.jefe = new Tornado(c, r) // jefe del Mundo 3
         } else if (ch === 'X') {
           this.xiana = new Xiana(c, r)
         } else if (ch === 'V') {

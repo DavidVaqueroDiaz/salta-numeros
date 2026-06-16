@@ -35,6 +35,78 @@ import { nivel33 } from './nivel33'
 import { nivel34 } from './nivel34'
 import { nivel35 } from './nivel35'
 import { nivelFinal } from './nivelfinal'
+import { nivel37 } from './nivel37'
+import { nivel38 } from './nivel38'
+import { nivel39 } from './nivel39'
+import { nivel40 } from './nivel40'
+import { nivel41 } from './nivel41'
+import { nivel42 } from './nivel42'
+import { nivel43 } from './nivel43'
+import { nivel44 } from './nivel44'
+import { nivel45 } from './nivel45'
+import { nivel46 } from './nivel46'
+import { nivel47 } from './nivel47'
+import { nivel48 } from './nivel48'
+import { nivel49 } from './nivel49'
+import { nivel50 } from './nivel50'
+import { nivel51 } from './nivel51'
+import { nivel52 } from './nivel52'
+import { nivel53 } from './nivel53'
+import { nivel54 } from './nivel54'
+import { nivel55 } from './nivel55'
+import { nivel56 } from './nivel56'
+import { nivel57 } from './nivel57'
+import { nivel58 } from './nivel58'
+import { nivel59 } from './nivel59'
+import { nivel60 } from './nivel60'
+import { nivel61 } from './nivel61'
+import { nivel62 } from './nivel62'
+import { nivel63 } from './nivel63'
+import { nivel64 } from './nivel64'
+import { nivel65 } from './nivel65'
+import { nivel66 } from './nivel66'
+import { nivel67 } from './nivel67'
+import { nivel68 } from './nivel68'
+import { nivel69 } from './nivel69'
+import { nivel70 } from './nivel70'
+import { nivel71 } from './nivel71'
+import { nivelFinal2 } from './nivelfinal2'
+import { nivel73 } from './nivel73'
+import { nivel74 } from './nivel74'
+import { nivel75 } from './nivel75'
+import { nivel76 } from './nivel76'
+import { nivel77 } from './nivel77'
+import { nivel78 } from './nivel78'
+import { nivel79 } from './nivel79'
+import { nivel80 } from './nivel80'
+import { nivel81 } from './nivel81'
+import { nivel82 } from './nivel82'
+import { nivel83 } from './nivel83'
+import { nivel84 } from './nivel84'
+import { nivel85 } from './nivel85'
+import { nivel86 } from './nivel86'
+import { nivel87 } from './nivel87'
+import { nivel88 } from './nivel88'
+import { nivel89 } from './nivel89'
+import { nivel90 } from './nivel90'
+import { nivel91 } from './nivel91'
+import { nivel92 } from './nivel92'
+import { nivel93 } from './nivel93'
+import { nivel94 } from './nivel94'
+import { nivel95 } from './nivel95'
+import { nivel96 } from './nivel96'
+import { nivel97 } from './nivel97'
+import { nivel98 } from './nivel98'
+import { nivel99 } from './nivel99'
+import { nivel100 } from './nivel100'
+import { nivel101 } from './nivel101'
+import { nivel102 } from './nivel102'
+import { nivel103 } from './nivel103'
+import { nivel104 } from './nivel104'
+import { nivel105 } from './nivel105'
+import { nivel106 } from './nivel106'
+import { nivel107 } from './nivel107'
+import { nivelFinal3 } from './nivelfinal3'
 
 /** Colores oficiales estilo Numberblocks, del 1 al 10. */
 export const COLORES: Record<number, string> = {
@@ -49,8 +121,6 @@ export const COLORES: Record<number, string> = {
   9: '#8d99ae', // gris
   10: '#adb5bd', // plateado (cuerpo blanco con borde rojo)
 }
-
-export const TOTAL_NIVELES = 35
 
 export const NIVELES: Record<number, LevelData> = {
   1: nivel1,
@@ -88,8 +158,113 @@ export const NIVELES: Record<number, LevelData> = {
   33: nivel33,
   34: nivel34,
   35: nivel35,
-  36: nivelFinal, // el Comecubos y Xiana
+  36: nivelFinal, // el Comecubos y Xiana (final del Mundo 1)
+  // ----- MUNDO 2 (37-71) + Mago Oscuro (72) -----
+  37: nivel37,
+  38: nivel38,
+  39: nivel39,
+  40: nivel40,
+  41: nivel41,
+  42: nivel42,
+  43: nivel43,
+  44: nivel44,
+  45: nivel45,
+  46: nivel46,
+  47: nivel47,
+  48: nivel48,
+  49: nivel49,
+  50: nivel50,
+  51: nivel51,
+  52: nivel52,
+  53: nivel53,
+  54: nivel54,
+  55: nivel55,
+  56: nivel56,
+  57: nivel57,
+  58: nivel58,
+  59: nivel59,
+  60: nivel60,
+  61: nivel61,
+  62: nivel62,
+  63: nivel63,
+  64: nivel64,
+  65: nivel65,
+  66: nivel66,
+  67: nivel67,
+  68: nivel68,
+  69: nivel69,
+  70: nivel70,
+  71: nivel71,
+  72: nivelFinal2, // el Mago Oscuro y Xiana (final del Mundo 2)
+  // ----- MUNDO 3 (73-107, aéreo) + Remolino (108) -----
+  73: nivel73,
+  74: nivel74,
+  75: nivel75,
+  76: nivel76,
+  77: nivel77,
+  78: nivel78,
+  79: nivel79,
+  80: nivel80,
+  81: nivel81,
+  82: nivel82,
+  83: nivel83,
+  84: nivel84,
+  85: nivel85,
+  86: nivel86,
+  87: nivel87,
+  88: nivel88,
+  89: nivel89,
+  90: nivel90,
+  91: nivel91,
+  92: nivel92,
+  93: nivel93,
+  94: nivel94,
+  95: nivel95,
+  96: nivel96,
+  97: nivel97,
+  98: nivel98,
+  99: nivel99,
+  100: nivel100,
+  101: nivel101,
+  102: nivel102,
+  103: nivel103,
+  104: nivel104,
+  105: nivel105,
+  106: nivel106,
+  107: nivel107,
+  108: nivelFinal3, // el Remolino y Xiana (final del Mundo 3)
 }
 
-/** Número del nivel final (jefe). */
+/** Número de fases normales por mundo (sin contar el jefe). */
+export const TOTAL_NIVELES = 35
+
+/**
+ * Mundos del juego. Cada uno tiene 35 fases normales + un jefe final.
+ * La flecha del menú lleva al siguiente mundo cuando se completa el jefe del
+ * actual. El progreso es por modo de dificultad (ver storage/progress.ts).
+ */
+export interface Mundo {
+  num: number
+  primero: number
+  ultimo: number
+  final: number
+}
+
+export const MUNDOS: Mundo[] = [
+  { num: 1, primero: 1, ultimo: 35, final: 36 },
+  { num: 2, primero: 37, ultimo: 71, final: 72 },
+  { num: 3, primero: 73, ultimo: 107, final: 108 },
+]
+
+/** Número del nivel final del Mundo 1 (compatibilidad). */
 export const NIVEL_FINAL = 36
+
+/** ¿Es n la fase de un jefe final (de cualquier mundo)? */
+export function esNivelFinal(n: number): boolean {
+  return MUNDOS.some((m) => m.final === n)
+}
+
+/** Mundo al que pertenece la fase n (o el Mundo 1 por defecto). */
+export function mundoDe(n: number): Mundo {
+  return MUNDOS.find((m) => (n >= m.primero && n <= m.ultimo) || n === m.final) ?? MUNDOS[0]
+}

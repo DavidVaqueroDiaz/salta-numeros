@@ -58,7 +58,7 @@ for (const fichero of ficheros) {
   // 4. Pinchos, enemigos, jefe, Xiana, P y M: todos sobre suelo (no lava)
   filas.forEach((f, r) =>
     [...f].forEach((ch, c) => {
-      if ('^EPMBXV'.includes(ch) && !esSuelo(get(c, r + 1)))
+      if ('^EPMBXVZ'.includes(ch) && !esSuelo(get(c, r + 1)))
         fallo(fichero, `'${ch}' en (col ${c}, fila ${r}) sin suelo debajo`)
     }),
   )
@@ -70,8 +70,8 @@ for (const fichero of ficheros) {
   const suelo = filas[filas.length - 1]
   let inicio = -1
   for (let c = 0; c <= suelo.length; c++) {
-    // tierra, hielo y lava cuentan como suelo del foso (no son caída)
-    const esHueco = c < suelo.length && !'#IL'.includes(suelo[c])
+    // tierra, hielo, lava y agua cuentan como fondo (no son caída al vacío)
+    const esHueco = c < suelo.length && !'#IL~'.includes(suelo[c])
     if (esHueco && inicio < 0) inicio = c
     if (!esHueco && inicio >= 0) {
       const anchoHueco = c - inicio
