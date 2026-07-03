@@ -568,16 +568,23 @@ por la primera casilla sin marcar** (cada fase es independiente).
       fila en Ajustes, aplicado en `aplicarAjustes`; la clave de ajustes ya se
       sincronizaba entera). Arranca tras el primer toque (autoplay).
 
-### Fase C — Pistas educativas en las puertas ⏳ PENDIENTE
-- [ ] Al fallar una respuesta en una puerta, mostrar una PISTA visual con
-      bloquecitos estilo Numberblocks (p. ej. 3+4 → dibujar 3 cubitos + 4
-      cubitos en el modal, mathDoor.ts). Al segundo fallo, pista más explícita.
+### Fase C — Pistas educativas en las puertas ✅ HECHA
+- [x] Al PRIMER fallo en una puerta aparece una pista visual con bloquecitos
+      estilo Numberblocks (`crearPista` en mathDoor.ts + CSS .puerta-pista):
+      suma → dos grupos de colores para contar; resta → bloques tachados ✖;
+      multiplicación → rejilla de filas; división → reparto en filas iguales;
+      doble/mitad → dos filas iguales. Series y problemas → ánimo para pensar
+      con calma. Verificado: "3 + 1" muestra 3 rojos + 1 azul.
 
-### Fase D — Informe para papá ⏳ PENDIENTE
+### Fase D — Informe para papá ⏳ PENDIENTE (siguiente sesión)
 - [ ] Registrar aciertos/fallos por tipo de operación en localStorage
-      (`salta-numeros-informe`, sumar en mathDoor/main al responder).
-- [ ] Pantalla "📊 Informe" en Ajustes: % de aciertos por tipo (suma, resta,
-      tablas…), para saber qué practicar con Joel. Añadir la clave a sync.ts.
+      (`salta-numeros-informe`). CÓMO: en main.ts, en los dos sitios donde se
+      llama a `abrirPuertaMatematica`, se conoce el `spec.tipo`; en el callback
+      sumar `{tipo: {aciertos, fallos}}` (fallos = res.errores). Módulo nuevo
+      `src/storage/informe.ts` con `registrar(tipo, errores)` y `cargar()`.
+- [ ] Pantalla "📊 Informe" en Ajustes (screens.ts): tabla tipo → % aciertos,
+      con nombres bonitos (suma, resta, tablas…). Añadir la clave a sync.ts
+      (CLAVES + fusión sumando ambos lados).
 
 ### Fase E — Cierre con premio ⏳ PENDIENTE
 - [ ] Cinemática de cierre al completar el jefe del Mundo 3 (los tres
