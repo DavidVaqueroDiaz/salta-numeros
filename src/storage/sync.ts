@@ -12,6 +12,7 @@ const CLAVES = [
   'salta-numeros-cinematicas',
   'salta-numeros-monedero',
   'salta-numeros-personajes',
+  'salta-numeros-informe',
 ] as const
 
 type Volcado = Partial<Record<(typeof CLAVES)[number], string>>
@@ -116,6 +117,19 @@ export async function cargarDesdeFichero(): Promise<boolean> {
         'salta-numeros-personajes',
         JSON.stringify({ comprados, equipado: f.equipado ?? l.equipado ?? 1 }),
       )
+    }
+    // informe de mates: se queda el que tenga MÁS preguntas registradas
+    if (datos['salta-numeros-informe']) {
+      try {
+        const fich = JSON.parse(datos['salta-numeros-informe'])
+        const localRaw = localStorage.getItem('salta-numeros-informe')
+        const local = localRaw ? JSON.parse(localRaw) : { registros: [] }
+        if ((fich.registros?.length ?? 0) > (local.registros?.length ?? 0)) {
+          localStorage.setItem('salta-numeros-informe', datos['salta-numeros-informe'])
+        }
+      } catch {
+        // informe corrupto en el fichero: se ignora
+      }
     }
     // ajustes, tutoriales y modo elegido: el navegador manda si ya tiene algo
     for (const clave of [

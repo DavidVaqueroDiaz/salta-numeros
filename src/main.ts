@@ -28,6 +28,7 @@ import {
   guardarEnFicheroAlCerrar,
 } from './storage/sync'
 import { guardarResultado } from './storage/progress'
+import { registrarPregunta } from './storage/informe'
 import { Intro } from './ui/intro'
 import { Cinematica } from './ui/cinematica2'
 
@@ -200,7 +201,9 @@ function comprobarPuertas(): void {
     estado = 'puerta' // el cronómetro se pausa: las mates se piensan con calma
     resetInput()
     const spec = puertaAjustada(d.spec, paramsDificultad().mates)
-    abrirPuertaMatematica(generarPregunta(spec), (res) => {
+    const preg = generarPregunta(spec)
+    abrirPuertaMatematica(preg, (res) => {
+      registrarPregunta(nivelActual, spec.tipo, preg.texto, res.errores, res.acertada)
       erroresPuertas += res.errores
       if (res.acertada) {
         d.abierta = true
@@ -552,7 +555,9 @@ function update(dt: number): void {
           jefe.invulT = 1.2
           estado = 'puerta'
           resetInput()
-          abrirPuertaMatematica(generarPregunta({ tipo: 'reto', max: 5 }), (res) => {
+          const pregJefe = generarPregunta({ tipo: 'reto', max: 5 })
+          abrirPuertaMatematica(pregJefe, (res) => {
+            registrarPregunta(nivelActual, 'reto', pregJefe.texto, res.errores, res.acertada)
             erroresPuertas += res.errores
             if (res.acertada) {
               jefe.golpear()

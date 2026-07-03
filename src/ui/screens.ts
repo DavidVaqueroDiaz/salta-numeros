@@ -9,6 +9,7 @@ import {
 } from '../storage/settings'
 import { setSonidoActivado } from '../game/sound'
 import { setMusicaActivada } from '../game/music'
+import { cargarInforme, descargarInforme, resumenPorTipo } from '../storage/informe'
 import {
   cargarMonedero,
   cargarPersonajes,
@@ -742,7 +743,14 @@ function abrirAjustes(alElegir: (nivel: number) => void): void {
     pintarTamano()
   })
   pintarTamano()
-  caja.append(filaSonido, filaMusica, filaControles)
+
+  // Informe de mates para papá: ver los cálculos del jugador y descargarlos
+  const filaInforme = document.createElement('button')
+  filaInforme.className = 'ajuste-fila'
+  filaInforme.textContent = `📊 Informe de mates (${cargarInforme().registros.length} preguntas)`
+  filaInforme.addEventListener('click', () => abrirInforme(alElegir))
+
+  caja.append(filaSonido, filaMusica, filaControles, filaInforme)
 
   const borrar = document.createElement('button')
   borrar.className = 'ajuste-fila peligro'
@@ -772,6 +780,83 @@ function abrirAjustes(alElegir: (nivel: number) => void): void {
     mostrarMenu(alElegir) // refresca por si se borró el progreso
   })
   caja.appendChild(cerrar)
+
+  dialogo.appendChild(caja)
+  dialogo.classList.remove('hidden')
+}
+
+/**
+ * 📊 Informe de mates: resumen por tipo de operación, últimas preguntas con
+ * sus fallos, y botón para DESCARGAR el documento completo (txt).
+ */
+function abrirInforme(alElegir: (nivel: number) => void): void {
+  const dialogo = document.getElementById('dialogo')!
+  dialogo.innerHTML = ''
+  const caja = document.createElement('div')
+  caja.className = 'dialogo-caja informe-caja'
+
+  const inf = cargarInforme()
+  const titulo = document.createElement('p')
+  titulo.className = 'puerta-pregunta'
+  titulo.textContent = `📊 Informe de mates · ${inf.registros.length} preguntas`
+  caja.appendChild(titulo)
+
+  if (inf.registros.length === 0) {
+    const vacio = document.createElement('p')
+    vacio.className = 'tutorial-texto'
+    vacio.textContent = 'Todavía no hay preguntas registradas: ¡a jugar!'
+    caja.appendChild(vacio)
+  } else {
+    // resumen por tipo de operación
+    const resumen = document.createElement('div')
+    resumen.className = 'informe-resumen'
+    for (const s of resumenPorTipo(inf)) {
+      const pct = Math.round((s.alaPrimera / s.preguntas) * 100)
+      const fila = document.createElement('div')
+      fila.className = 'informe-fila'
+      const color = pct >= 80 ? '#2d9c46' : pct >= 50 ? '#e6a700' : '#c1121f'
+      fila.innerHTML = `<span>${s.nombre}</span><span style="color:${color}">${pct} % a la primera · ${s.preguntas} preg.</span>`
+      resumen.appendChild(fila)
+    }
+    caja.appendChild(resumen)
+
+    // últimas preguntas (el documento descargado las lleva todas)
+    const sub = document.createElement('p')
+    sub.className = 'tutorial-texto'
+    sub.textContent = 'Últimas preguntas:'
+    caja.appendChild(sub)
+    const lista = document.createElement('div')
+    lista.className = 'informe-lista'
+    for (const r of [...inf.registros].reverse().slice(0, 12)) {
+      const fila = document.createElement('div')
+      fila.className = 'informe-fila'
+      const marca = r.acertada ? (r.fallos === 0 ? '✅' : `⚠️ ${r.fallos} fallo(s)`) : '❌'
+      fila.innerHTML = `<span>${r.pregunta}</span><span>${marca}</span>`
+      lista.appendChild(fila)
+    }
+    caja.appendChild(lista)
+  }
+
+  const fila = document.createElement('div')
+  fila.className = 'fila-botones'
+  const descargar = document.createElement('button')
+  descargar.className = 'boton-grande'
+  descargar.textContent = '⬇️ Descargar informe'
+  descargar.disabled = inf.registros.length === 0
+  descargar.addEventListener('click', () => {
+    descargarInforme()
+    descargar.textContent = '✅ Descargado'
+    setTimeout(() => (descargar.textContent = '⬇️ Descargar informe'), 2000)
+  })
+  const cerrar = document.createElement('button')
+  cerrar.className = 'boton-grande secundario'
+  cerrar.textContent = 'Cerrar'
+  cerrar.addEventListener('click', () => {
+    cerrarDialogo()
+    mostrarMenu(alElegir)
+  })
+  fila.append(descargar, cerrar)
+  caja.appendChild(fila)
 
   dialogo.appendChild(caja)
   dialogo.classList.remove('hidden')

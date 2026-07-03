@@ -576,15 +576,19 @@ por la primera casilla sin marcar** (cada fase es independiente).
       doble/mitad → dos filas iguales. Series y problemas → ánimo para pensar
       con calma. Verificado: "3 + 1" muestra 3 rojos + 1 azul.
 
-### Fase D — Informe para papá ⏳ PENDIENTE (siguiente sesión)
-- [ ] Registrar aciertos/fallos por tipo de operación en localStorage
-      (`salta-numeros-informe`). CÓMO: en main.ts, en los dos sitios donde se
-      llama a `abrirPuertaMatematica`, se conoce el `spec.tipo`; en el callback
-      sumar `{tipo: {aciertos, fallos}}` (fallos = res.errores). Módulo nuevo
-      `src/storage/informe.ts` con `registrar(tipo, errores)` y `cargar()`.
-- [ ] Pantalla "📊 Informe" en Ajustes (screens.ts): tabla tipo → % aciertos,
-      con nombres bonitos (suma, resta, tablas…). Añadir la clave a sync.ts
-      (CLAVES + fusión sumando ambos lados).
+### Fase D — Informe para papá ✅ HECHA (ampliada a petición de Vaquero)
+- [x] `src/storage/informe.ts`: registro de CADA pregunta respondida (fecha,
+      nivel, tipo, enunciado, fallos, acertada) en `salta-numeros-informe`
+      (tope 1000). Se apunta en main.ts en las puertas y en los retos de jefe.
+- [x] Pantalla **📊 Informe de mates** en Ajustes: resumen por tipo (% a la
+      primera con color verde/ámbar/rojo, nº de preguntas), lista de las
+      últimas 12 con ✅/⚠️ fallos/❌, y botón **⬇️ Descargar informe** que baja
+      un .txt con el resumen y TODAS las preguntas (fecha | nivel | pregunta |
+      fallos | resultado). `textoInforme()`/`descargarInforme()`.
+- [x] sync.ts: la clave viaja al fichero del lanzador; al fusionar gana el
+      lado con más preguntas registradas. Verificado en preview: 2 respuestas
+      (una a la primera, otra con 1 fallo) → botón "(2 preguntas)", resumen
+      "Sumas 50 % a la primera" y lista correcta.
 
 ## 🗼 MUNDO 4 VERTICAL (2026-07-03, Fable 5) — EN CURSO
 
