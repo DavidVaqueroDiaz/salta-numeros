@@ -226,6 +226,28 @@ body {
   text-align: center;
 }
 
+/* El nivel pendiente LATE para guiar la vista ("juega aquí") */
+.nivel-btn.siguiente,
+.final-btn.siguiente {
+  animation: late 1.1s ease-in-out infinite;
+  box-shadow: 0 0 0 3px #ffd60a, 0 6px 0 rgba(0, 0, 0, 0.15);
+}
+
+@keyframes late {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.09);
+  }
+}
+
+.boton-grande.continuar {
+  padding: 10px 22px;
+  font-size: 20px;
+}
+
 /* 📊 Informe de mates (Ajustes) */
 .informe-caja {
   max-width: min(92vw, 560px);

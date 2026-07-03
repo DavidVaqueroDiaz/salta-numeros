@@ -169,6 +169,10 @@ export class Renderer {
     }
     // invisible: se ve translúcido (el jugador sí se ve a sí mismo)
     if (player.invisibleT > 0) ctx.globalAlpha = 0.35
+    // recién reaparecido: parpadea mientras es invulnerable
+    if (player.invulnerableT > 0 && Math.sin(performance.now() / 45) > 0) {
+      ctx.globalAlpha = Math.min(ctx.globalAlpha, 0.35)
+    }
     // squash & stretch: estirado en el aire, aplastado al aterrizar fuerte
     const cxP = player.x + player.w / 2
     const piesY = player.y + player.h

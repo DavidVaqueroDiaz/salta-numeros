@@ -8,7 +8,7 @@ import { CuboVolando } from './game/entities'
 import { Player } from './game/player'
 import { sonido } from './game/sound'
 import { iniciarMusica, setTemaMusica } from './game/music'
-import { NIVELES, esNivelFinal } from './levels/index'
+import { MUNDOS, NIVELES, esNivelFinal, mundoDe } from './levels/index'
 import { generarPregunta, puertaAjustada } from './math/questions'
 import { abrirPuertaMatematica } from './ui/mathDoor'
 import { dificultadActual, paramsDificultad } from './game/dificultad'
@@ -104,6 +104,15 @@ function actualizarVidasHud(): void {
   const llenos = Math.max(0, vidas)
   hudLives.textContent = '❤️'.repeat(llenos) + '🖤'.repeat(Math.max(0, vidasMax - llenos))
   hudLives.classList.remove('hidden')
+}
+
+/** Vibración táctil suave (tablet); silenciosa si el aparato no vibra. */
+function vibrar(patron: number | number[]): void {
+  try {
+    navigator.vibrate?.(patron)
+  } catch {
+    // sin vibración: no pasa nada
+  }
 }
 
 let toastTimer = 0
@@ -229,10 +238,22 @@ function retroceder(d: Door): void {
   }
 }
 
+/** Fase que viene después de `n` (la siguiente, el jefe, o el mundo siguiente). */
+function nivelSiguiente(n: number): number | null {
+  const m = mundoDe(n)
+  if (n === m.final) {
+    const sig = MUNDOS.find((x) => x.num === m.num + 1)
+    return sig ? sig.primero : null
+  }
+  if (n === m.ultimo) return m.final
+  return n + 1 in NIVELES ? n + 1 : null
+}
+
 function terminarNivel(): void {
   if (!level) return
   estado = 'resultados'
   sonido.victoria()
+  vibrar([60, 40, 60])
   const ms = Math.round(tiempoMs)
   // 1 estrella por completar, +1 sin fallos en las puertas, +1 por rapidez
   const estrellas =
@@ -263,6 +284,10 @@ function terminarNivel(): void {
     },
     () => empezarNivel(nivelActual),
     irAlMenu,
+    (() => {
+      const sig = nivelSiguiente(nivelActual)
+      return sig !== null ? () => empezarNivel(sig) : undefined
+    })(),
   )
 }
 
@@ -284,9 +309,12 @@ function quitarVida(): boolean {
   return false
 }
 
-function morir(): void {
+function morir(forzar = false): void {
   if (!level) return
+  // recién reaparecido no se muere otra vez (salvo caer fuera del mapa)
+  if (!forzar && player.invulnerableT > 0) return
   sonido.golpe()
+  vibrar(80)
   if (quitarVida()) return // sin vidas: ya se reinició toda la fase
   player.respawn() // con vidas restantes: reaparece en el último punto de control
   player.limpiarPoderes()
@@ -649,7 +677,9 @@ function update(dt: number): void {
     )
   }
 
-  if (player.haMuerto(level)) morir()
+  // caer fuera del mapa mata SIEMPRE; pinchos/lava respetan la invulnerabilidad
+  if (player.y > level.heightPx + 100) morir(true)
+  else if (player.haMuerto(level)) morir()
 
   // Monedas
   for (const m of level.monedas) {

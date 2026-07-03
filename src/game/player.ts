@@ -41,6 +41,8 @@ export class Player {
   aterrizoFuerte = false
   /** impulso externo (trampolín, Remolino): mientras dure no se recorta el salto */
   impulsoT = 0
+  /** tras reaparecer, un momento sin recibir daño (evita muertes en cadena) */
+  invulnerableT = 0
   /** evita rebotar entre tubos al instante */
   tuboCooldownT = 0
   /** ¿está nadando ahora mismo? (lo rellena update) */
@@ -93,6 +95,7 @@ export class Player {
     this.vy = 0
     this.vx = 0
     this.girandoT = 0
+    this.invulnerableT = 1.2 // margen para recolocarse sin morir en cadena
     this.enSuelo = false
     this.saltosUsados = 0
     this.plataforma = null
@@ -114,6 +117,7 @@ export class Player {
     this.estrellaT = Math.max(0, this.estrellaT - dt)
     this.girandoT = Math.max(0, this.girandoT - dt)
     this.impulsoT = Math.max(0, this.impulsoT - dt)
+    this.invulnerableT = Math.max(0, this.invulnerableT - dt)
     this.tuboCooldownT = Math.max(0, this.tuboCooldownT - dt)
     this.enAgua = level.esAgua(
       Math.floor((this.x + this.w / 2) / TILE),

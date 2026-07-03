@@ -642,6 +642,20 @@ trampolines decorativos, y faltaba avanzar a la derecha. Rediseño total:
   obligatorios (las 18 torres salen imposibles sin ellos; con ellos, todo
   pasa). parMs subido a 175-245 s.
 
+### Fase F — Flujo y confort ✅ HECHA (2026-07-04, Fable 5)
+- [x] **➡️ Siguiente** en resultados (botón protagonista; Repetir pasa a
+      secundario): encadena fases sin ir al menú. `nivelSiguiente(n)` en main:
+      n+1 → jefe del mundo → primera del mundo siguiente.
+- [x] **▶️ Continuar · fase N** en el menú: salta a la primera fase sin
+      completar del modo (recorre todos los mundos y cambia mundoVista); el
+      botón de esa fase **late** (clase `siguiente`, animación `late`).
+- [x] **Invulnerabilidad 1,2 s tras reaparecer** (`player.invulnerableT`,
+      parpadeo en renderer): morir(forzar) — tocar bichos/pinchos no mata en
+      cadena; caer fuera del mapa mata siempre. Verificado: sobrevive al bicho
+      durante la ventana.
+- [x] **Vibración táctil** (`vibrar()` en main, navigator.vibrate con guarda):
+      80 ms al morir, patrón [60,40,60] al completar nivel.
+
 ### Fase E — Cierre con premio ⏳ PENDIENTE
 - [ ] Cinemática de cierre al completar el jefe del Mundo 3 (los tres
       monstruos vencidos, Xiana y el personaje celebran).

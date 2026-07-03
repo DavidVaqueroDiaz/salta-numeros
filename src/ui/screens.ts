@@ -86,6 +86,24 @@ export function mostrarMenu(
     modos.appendChild(btn)
   }
 
+  // primera fase sin completar del modo (para "Continuar" y el latido-guía)
+  let pendiente: number | null = null
+  let mundoPendiente = 1
+  for (const m of MUNDOS) {
+    for (let n = m.primero; n <= m.ultimo; n++) {
+      if (!progreso[n]?.completed) {
+        pendiente = n
+        mundoPendiente = m.num
+        break
+      }
+    }
+    if (pendiente === null && !progreso[m.final]?.completed) {
+      pendiente = m.final
+      mundoPendiente = m.num
+    }
+    if (pendiente !== null) break
+  }
+
   // ¿qué mundo se ve? (clampado por si el modo no lo tiene desbloqueado)
   if (mundoVista > MUNDOS.length) mundoVista = MUNDOS.length
   const finalAnterior = mundoVista > 1 ? MUNDOS[mundoVista - 2].final : 0
@@ -114,6 +132,21 @@ export function mostrarMenu(
   btnMundos.addEventListener('click', () => mostrarLanding(alElegir))
   nav.append(etiquetaMundo, btnMundos)
 
+  // ▶️ Continuar: salta directo a la primera fase pendiente (aunque esté en
+  // otro mundo), sin buscarla por la rejilla
+  if (pendiente !== null) {
+    const btnContinuar = document.createElement('button')
+    btnContinuar.className = 'boton-grande continuar'
+    btnContinuar.textContent = `▶️ Continuar · fase ${pendiente}`
+    const objetivo = pendiente
+    const objetivoMundo = mundoPendiente
+    btnContinuar.addEventListener('click', () => {
+      mundoVista = objetivoMundo
+      alElegir(objetivo)
+    })
+    nav.appendChild(btnContinuar)
+  }
+
   const rejilla = document.createElement('div')
   rejilla.className = 'niveles'
 
@@ -130,6 +163,7 @@ export function mostrarMenu(
       estrellas.className = 'estrellas'
       estrellas.textContent = estrellasTexto(progreso[n]?.stars ?? 0)
       btn.append(num, estrellas)
+      if (n === pendiente) btn.classList.add('siguiente') // late: "juega aquí"
       btn.addEventListener('click', () => alElegir(n))
     } else {
       btn.classList.add('bloqueado')
@@ -147,6 +181,7 @@ export function mostrarMenu(
     btnFinal.textContent = hecho
       ? `⭐ ¡Salva a Xiana otra vez! ${estrellasTexto(progreso[mundo.final]?.stars ?? 0)}`
       : '⭐ JEFE FINAL: ¡salva a Xiana!'
+    if (mundo.final === pendiente) btnFinal.classList.add('siguiente')
     btnFinal.addEventListener('click', () => alElegir(mundo.final))
   } else {
     btnFinal.classList.add('bloqueado')
@@ -879,6 +914,7 @@ export function mostrarResultados(
   datos: DatosResultado,
   alRepetir: () => void,
   alMenu: () => void,
+  alSiguiente?: () => void,
 ): void {
   const pantalla = document.getElementById('screen-results')!
   pantalla.innerHTML = ''
@@ -913,8 +949,16 @@ export function mostrarResultados(
 
   const fila = document.createElement('div')
   fila.className = 'fila-botones'
+  // seguir jugando sin pasar por el menú: el botón protagonista
+  if (alSiguiente) {
+    const btnSiguiente = document.createElement('button')
+    btnSiguiente.className = 'boton-grande'
+    btnSiguiente.textContent = '➡️ Siguiente'
+    btnSiguiente.addEventListener('click', alSiguiente)
+    fila.appendChild(btnSiguiente)
+  }
   const btnRepetir = document.createElement('button')
-  btnRepetir.className = 'boton-grande'
+  btnRepetir.className = alSiguiente ? 'boton-grande secundario' : 'boton-grande'
   btnRepetir.textContent = '🔁 Repetir'
   btnRepetir.addEventListener('click', alRepetir)
   const btnMenu = document.createElement('button')
