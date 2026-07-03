@@ -68,6 +68,10 @@ function aereo({
     if (i % 2 === 0) z.pon(r - 1, col + 1, 'o')
     if (i % 3 === 1 && r - 3 >= 0) z.pon(r - 3, col + 1, 'o') // moneda alta escondida
   })
+  // plataformas de aterrizaje junto a la repisa de la meta: pase lo que pase
+  // con el reparto del camino, el último salto siempre es corto
+  z.pon(8, W - 15, '###')
+  z.pon(8, W - 11, '###')
   // 2) extras: móviles/caedizas/parpadeantes/ítems
   for (const [r, c, t] of extras) z.pon(r, c, t)
   // 3) puertas de mates AL FINAL (plataforma ancha + puerta intacta, no saltable)

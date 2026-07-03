@@ -519,6 +519,24 @@ Tema espacio, mates reto3/operacion/mitadDoble.
   transitable en todas direcciones) además de saltos y tubos, así detecta estos
   bloqueos submarinos. Con el arreglo, todas las fases pasan.
 
+### Revisión total de saltos con física real (2026-07-03, Fable 5)
+
+- **`check-passable.mjs` reescrito con la FÍSICA REAL de player.ts**: simula el
+  doble salto (vel 150, salto 580, gravedad 1500) y calcula el alcance exacto
+  por diferencia de altura (llano 7 tiles, subir 4 → 6, bajar 4 → 8; tabla
+  aparte para gravedad lunar). El BFS usa esa tabla, comprueba que el arco no
+  atraviese muros, recoge ítems en pleno salto, nada, cruza tubos y pisa
+  móviles. **Modo `--estricto`**: margen infantil (–1 tile, sin contar el
+  arcoíris como rescate) — calibrado con el Mundo 1, que Joel tiene a 3★.
+  El 15 y el 22 están en una lista de "fases de vuelo intencionadas".
+- **Causa raíz de los saltos imposibles del Mundo 3** (74, 75, 89, 99, 101,
+  107): el camino de plataformas paraba en la col W−12 pero la repisa de la
+  meta empieza en W−7 → el ÚLTIMO salto podía quedar de 8-9 tiles. `aereo`
+  ahora añade **dos plataformas de aterrizaje fijas** (cols W−15 y W−11, fila
+  8) para que el salto final siempre sea corto. Verificado en juego: el peor
+  hueco de esas 6 fases es ahora de 3-4 tiles.
+- Estado: estricto ✅, normal ✅, check-levels ✅, build ✅.
+
 - Cinemática de cierre + contador total de estrellas con premio al 100 %.
 - Pistas visuales con bloquecitos al fallar una puerta.
 - Música chiptune + squash & stretch + vibración + botón pausa.
