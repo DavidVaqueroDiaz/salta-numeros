@@ -67,6 +67,7 @@ const TAB_LUNAR = tablaAlcance(1500 * 0.45, 900 * 0.6) // gravedadBaja de player
 // --estricto: margen para niños (2 tiles menos de alcance y sin contar el
 // rescate del arcoíris). Señala fases que exigen saltos al límite del píxel.
 const ESTRICTO = process.argv.includes('--estricto')
+const SIN_TRAMPOLIN = process.argv.includes('--sin-trampolin')
 const MARGEN = ESTRICTO ? 1 : 0
 
 // Fases diseñadas a propósito para cruzarse VOLANDO con el arcoíris (el ítem
@@ -190,6 +191,19 @@ for (const fichero of ficheros) {
     // entrar al agua adyacente desde tierra
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++) if (esAgua(c + dc, r + dr)) visita(c + dc, r + dr)
+    // trampolín ('J'): botar lanza ~8 tiles de subida (+ salto en el aire ≈ 10)
+    // (--sin-trampolin los ignora: sirve para DEMOSTRAR que son obligatorios)
+    if (!SIN_TRAMPOLIN && (ch(c, r) === 'J' || ch(c - 1, r) === 'J' || ch(c + 1, r) === 'J')) {
+      for (let dr = -10; dr <= -1; dr++) {
+        for (let dc = -4; dc <= 4; dc++) {
+          const nc = c + dc
+          const nr = r + dr
+          if (!transitable(nc, nr)) continue
+          if (Math.abs(dc) >= 2 && !arcoLibre(c, r, nc, nr)) continue
+          visita(nc, nr)
+        }
+      }
+    }
     // saltos según la tabla de física (por diferencia de altura)
     for (let dr = -8; dr <= 12; dr++) {
       const up = -dr

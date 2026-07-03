@@ -617,6 +617,27 @@ buceando esquivando pinchos, peces y medusas hasta la meta en el fondo).
       116 (spawn arriba, meta en el fondo, peces+medusas), Kraken (burbujas,
       cubo 3→2), landing con 4 mundos. Los 3 checkers y build en verde.
 
+### Rediseño del Mundo 4 tras las pruebas de Vaquero (2026-07-04)
+
+Feedback: demasiado fáciles, sin monedas, la sima se pasaba cayendo recto,
+trampolines decorativos, y faltaba avanzar a la derecha. Rediseño total:
+- **Torre (66×30, antes 30×24)**: recorrido estilo Mario clásico que sube Y
+  avanza → pasillo bajo con techo (hueco 3: a los enemigos hay que
+  cronometrarles el salto) → **trampolín OBLIGATORIO** (subida 10, imposible
+  con doble salto) → puente de parpadeantes sobre foso de pinchos (esperar el
+  ciclo) → checkpoint + puerta → **2º trampolín obligatorio** (subida 9) →
+  cornisas con vigilante → meta arriba a la DERECHA. 15 monedas por el camino.
+- **Sima (60×32)**: laberinto en S de estanterías de roca (cada una con UN
+  hueco alternando lado); cada hueco tiene guardián (pez u medusa: hay que
+  ESPERAR a que se aparte) y pinchos en el borde; **0 columnas de caída
+  recta** (verificado). Cámara de la meta sellada: la única entrada es la
+  puerta de mates. 18 monedas + premios en rincones.
+- Variantes por espejo horizontal (v impar) + `dura` (más patrullas, huecos
+  de 5, caediza traicionera en el puente).
+- **`check-passable --sin-trampolin`**: demuestra que los trampolines son
+  obligatorios (las 18 torres salen imposibles sin ellos; con ellos, todo
+  pasa). parMs subido a 175-245 s.
+
 ### Fase E — Cierre con premio ⏳ PENDIENTE
 - [ ] Cinemática de cierre al completar el jefe del Mundo 3 (los tres
       monstruos vencidos, Xiana y el personaje celebran).

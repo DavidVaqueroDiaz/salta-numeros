@@ -27,88 +27,134 @@ function rejilla(filas, ancho) {
   }
 }
 
-// columnas de las plataformas de cada variante de torre (ping-pong, saltos
-// cortos: del borde de una a la siguiente hay ≤4 tiles con subida de 2)
-const TORRE_COLS = [
-  [3, 10, 17, 22, 17, 10],
-  [22, 15, 8, 3, 8, 15],
-  [3, 9, 16, 22, 16, 9],
-  [20, 13, 6, 13],
-  [4, 11, 18, 11],
-]
+/** Refleja el mapa en horizontal (dobla la variedad sin duplicar trazados). */
+const espejo = (filas) => filas.map((f) => [...f].reverse().join(''))
 
 /**
- * TORRE: suelo abajo con la salida; plataformas de 5 en zigzag subiendo de 2 en
- * 2 filas; la meta en la plataforma más alta. `v` varía el trazado; opciones
- * para enemigos ('E'), vigilantes ('V'), trampolines ('J') y pinchos ('^') por
- * índice de piso, y una puerta de mates a mitad de subida.
+ * TORRE estilo Mario clásico: se SUBE y a la vez se AVANZA a la derecha.
+ * Recorrido: pasillo bajo con techo (hay que sortear enemigos con hueco de
+ * solo 3, cronometrando el salto) → sala con TRAMPOLÍN OBLIGATORIO (subida de
+ * 10 filas, imposible con doble salto: bote + salto en el aire) → puente de
+ * plataformas parpadeantes sobre pinchos (esperar el momento) → checkpoint y
+ * puerta de mates → segundo TRAMPOLÍN OBLIGATORIO (subida 9) → cornisas con
+ * vigilante hasta la meta, arriba a la derecha. Monedas por todo el camino.
  */
-function torre({ v = 0, H = 26, enemigos = [], vigilantes = [], trampolines = [], pinchos = [], puertaPiso = 4 }) {
-  const W = 30
+function torre({ v = 0, dura = false }) {
+  const H = 30
+  const W = 66
   const z = rejilla(H, W)
+  const suelo = H - 2 // filas 28-29 sólidas (suelo grueso)
   z.rellena(H - 1, 0, W - 1, '#')
-  z.pon(H - 2, 2, 'P')
-  z.pon(H - 2, 6, 'G') // gafas al empezar, como en el resto de mundos
-  const cols = TORRE_COLS[v % TORRE_COLS.length]
-  const pisos = []
-  let i = 0
-  for (let fila = H - 4; fila >= 4; fila -= 2) {
-    const col = cols[i % cols.length]
-    z.pon(fila, col, '#####')
-    pisos.push([fila, col])
-    i++
-  }
-  pisos.forEach(([fila, col], idx) => {
-    if (idx === pisos.length - 1) return // el último piso es el de la meta
-    if (enemigos.includes(idx)) z.pon(fila - 1, col + 1, 'E')
-    else if (vigilantes.includes(idx)) z.pon(fila - 1, col + 1, 'V')
-    else if (trampolines.includes(idx)) z.pon(fila - 1, col + 3, 'J')
-    else if (idx % 2 === 0) z.pon(fila - 2, col + 2, 'o')
-    if (pinchos.includes(idx)) z.pon(fila - 1, col + 4, '^')
-    // puerta de mates en su piso (4 de alto: no se salta sin responder)
-    if (idx === puertaPiso) {
-      for (let r = fila - 4; r <= fila - 1; r++) z.pon(r, col + 2, 'D')
-    }
-  })
-  // meta en el piso más alto
-  const [fTop, cTop] = pisos[pisos.length - 1]
-  z.pon(fTop - 1, cTop + 2, 'M')
-  return z.filas()
+  z.rellena(suelo, 0, W - 1, '#')
+  z.pon(suelo - 1, 2, 'P')
+  z.pon(suelo - 1, 5, 'G')
+
+  // --- Tramo 1: pasillo bajo (techo en fila 24, hueco de 3) con guardianes ---
+  z.rellena(suelo - 4, 6, 27, '#')
+  z.pon(suelo - 1, 12, 'E')
+  if (dura) z.pon(suelo - 1, 22, 'E')
+  z.pon(suelo - 1, 17, '^^')
+  z.pon(suelo - 2, 9, 'o')
+  z.pon(suelo - 2, 15, 'o')
+  z.pon(suelo - 2, 20, 'o')
+  z.pon(suelo - 2, 25, 'o')
+
+  // --- Sala del trampolín 1 (cols 28-39): subida de 10, SOLO con el bote ---
+  z.pon(suelo - 1, 32 + (v % 3), 'J')
+  z.rellena(suelo - 10, 30, 40, '#') // cornisa de llegada (pasa sobre el muro)
+  z.pon(suelo - 11, 31, 'ooo')
+  z.pon(suelo - 11, 37, 'oo')
+  z.col(40, suelo - 9, suelo - 1, '#') // muro: sella el paso por abajo
+
+  // --- Tramo 2 (piso fila 22): puente parpadeante sobre foso de pinchos ---
+  const piso2 = suelo - 6
+  z.rellena(piso2, 41, 46, '#')
+  z.rellena(piso2 + 1, 47, 53, '#') // foso más bajo…
+  z.pon(piso2, 47, '^'.repeat(dura ? 7 : 5)) // …alfombrado de pinchos
+  z.pon(piso2 - 2, 48, 'b')
+  z.pon(piso2 - 2, 51, dura ? 'F' : 'b') // en difícil, una caediza traicionera
+  z.pon(piso2 - 3, 49, 'o')
+  z.pon(piso2 - 3, 52, 'o')
+  z.rellena(piso2, 54, 58, '#')
+  z.pon(piso2 - 1, 55, 'C')
+  for (let r = piso2 - 4; r <= piso2 - 1; r++) z.pon(r, 57, 'D')
+
+  // --- Sala del trampolín 2 (cols 59-65): subida de 9, SOLO con el bote ---
+  z.rellena(piso2, 59, 65, '#')
+  z.pon(piso2 - 1, 62, 'J')
+  z.rellena(piso2 - 9, 57, 65, '#')
+  z.pon(piso2 - 10, 60, 'oo')
+
+  // --- Tramo 3: cornisas con vigilante hasta la meta ---
+  z.rellena(piso2 - 12, 50, 55, '#')
+  if (dura) z.pon(piso2 - 13, 52, 'V')
+  else z.pon(piso2 - 13, 52, 'o')
+  z.rellena(piso2 - 15, 58, 64, '#')
+  z.pon(piso2 - 16, 61, 'M')
+  z.pon(piso2 - 16, 59, 'o')
+
+  return v % 2 ? espejo(z.filas()) : z.filas()
 }
 
 /**
- * SIMA: repisa arriba con la salida; pozo de agua hasta el fondo con salientes
- * de roca (algunos con pinchos), peces y medusas; la meta abajo tras una
- * puerta de mates junto al fondo. `v` alterna el lado de los salientes.
+ * SIMA laberíntica: se BAJA buceando y a la vez se cruza de lado a lado.
+ * Estanterías de roca en S (cada una deja UN hueco en un extremo, alternando
+ * lados): nada hasta el hueco, espera a que el pez o la medusa que lo guarda
+ * se aparte, esquiva los pinchos del borde y baja al siguiente piso. Puerta
+ * de mates en el canal final y meta en el fondo. Monedas por el camino y
+ * premios en los rincones.
  */
-function sima({ v = 0, H = 28, peces = [], medusas = [], conPinchos = true }) {
-  const W = 26
+function sima({ v = 0, dura = false }) {
+  const H = 32
+  const W = 60
   const z = rejilla(H, W)
-  // agua en todo el pozo
-  for (let r = 2; r < H - 1; r++) z.rellena(r, 0, W - 1, '~')
-  // repisa de salida (por encima del agua)
+  for (let r = 2; r <= H - 2; r++) z.rellena(r, 0, W - 1, '~')
+  z.rellena(H - 1, 0, W - 1, '#')
+  // repisa de salida arriba a la izquierda
   z.rellena(2, 0, 6, '#')
   z.pon(1, 2, 'P')
   z.pon(1, 5, 'G')
-  // salientes de roca alternando lados cada 4 filas (dejan paso de ≥10 tiles)
-  let lado = v % 2
-  let idx = 0
-  for (let r = 6; r <= H - 6; r += 4) {
-    const c0 = lado === 0 ? 0 : W - 9
-    z.rellena(r, c0, c0 + 8, '#')
-    if (conPinchos && idx % 2 === 1) z.pon(r - 1, c0 + 3, '^^')
-    if (idx === 1) z.pon(r - 1, c0 + 6, 'C') // punto de control a media bajada
-    lado = 1 - lado
-    idx++
+
+  const gap = dura ? 5 : 7
+  const estantes = [
+    [7, true], // hueco a la derecha
+    [12, false], // hueco a la izquierda
+    [17, true],
+    [22, false],
+    [27, true],
+  ]
+  estantes.forEach(([fila, abiertaDer], i) => {
+    if (abiertaDer) z.rellena(fila, 0, W - 1 - gap, '#')
+    else z.rellena(fila, gap, W - 1, '#')
+    const borde = abiertaDer ? W - 1 - gap : gap
+    // pinchos junto al hueco: no rozar el borde al bajar
+    if (i % 2 === (dura ? 0 : 1)) {
+      z.pon(fila - 1, abiertaDer ? borde - 2 : borde + 1, '^^')
+    }
+    // guardián del hueco: pez patrullando o medusa flotando (hay que ESPERAR)
+    if (i % 2 === 0) z.pon(fila + 2, abiertaDer ? borde - 5 : borde + 4, 'f')
+    else z.pon(fila + 2, abiertaDer ? W - 3 : 2, 'u')
+    // monedas: rastro hacia el hueco y premio en el rincón cerrado
+    z.pon(fila - 1, abiertaDer ? 10 : W - 13, 'ooo')
+    if (dura) z.pon(fila + 2, abiertaDer ? 3 : W - 5, 'o')
+  })
+  // checkpoint a media bajada
+  z.pon(16, 10, 'C')
+  // en difícil, más patrullas en las travesías largas
+  if (dura) {
+    z.pon(9, 25, 'f')
+    z.pon(19, 30, 'f')
+    z.pon(24, 20, 'u')
   }
-  // bichos marinos: SOLO en celdas de agua (nunca sobre un saliente de roca)
-  for (const [r, c] of peces) if (z.g[r]?.[c] === '~') z.pon(r, c, 'f')
-  for (const [r, c] of medusas) if (z.g[r]?.[c] === '~') z.pon(r, c, 'u')
-  // fondo con puerta de mates y meta
-  z.rellena(H - 1, 0, W - 1, '#')
-  for (let r = H - 5; r <= H - 2; r++) z.pon(r, W - 7, 'D')
-  z.pon(H - 2, W - 3, 'M')
-  return z.filas()
+  // cámara de la meta: tras bajar el último hueco (derecha) hay que volver
+  // nadando a la IZQUIERDA, y la única entrada es la puerta de mates (muro
+  // sellado por el estante de arriba y el fondo)
+  for (let r = H - 4; r <= H - 2; r++) z.pon(r, 48, 'D')
+  z.pon(H - 2, 44, 'M')
+  z.pon(H - 3, 40, 'oo')
+  z.pon(H - 2, 3, 'oo') // rincón del fondo, premio de exploración
+
+  return v % 2 ? espejo(z.filas()) : z.filas()
 }
 
 // ----- ARENA DEL KRAKEN (144): fondo del mar con Xiana enjaulada -----
@@ -176,33 +222,20 @@ for (let n = 109; n <= 143; n++) {
   let com
   if (esTorre) {
     const dura = zona >= 2
-    mapa = torre({
-      v,
-      H: 24 + (v % 3) * 4,
-      enemigos: dura ? [1, 4, 7] : [2, 6],
-      vigilantes: dura ? [3, 8] : [],
-      trampolines: dura ? [0, 5] : [0],
-      pinchos: dura ? [2, 6] : [4],
-      puertaPiso: 4,
-    })
+    mapa = torre({ v, dura })
     tema = dura ? 'castillo' : 'bosque'
     com = dura
-      ? 'torre difícil: vigilantes, pinchos y trampolines para subir pisos'
-      : 'torre: sube saltando de plataforma en plataforma hasta la meta'
-    if (i === 0) aviso = '🗼 ¡MUNDO 4! La meta está ARRIBA: sube por las plataformas (los muelles te lanzan)'
+      ? 'torre difícil: pasillos vigilados, caedizas y vigilante en las cornisas'
+      : 'torre: pasillo con guardianes, trampolines obligatorios y puente parpadeante'
+    if (i === 0) aviso = '🗼 ¡MUNDO 4! Sube y avanza: los MUELLES son el único camino hacia arriba'
   } else {
     const dura = zona >= 3
-    const H = 26 + (v % 3) * 4
-    const peces = []
-    const medusas = []
-    for (let k = 0; k < (dura ? 5 : 3); k++) peces.push([8 + k * 4, 12 + ((k * 7) % 12)])
-    for (let k = 0; k < (dura ? 4 : 1); k++) medusas.push([10 + k * 5, 4 + ((k * 9) % 18)])
-    mapa = sima({ v, H, peces, medusas, conPinchos: true })
+    mapa = sima({ v, dura })
     tema = dura ? 'cueva' : 'nieve'
     com = dura
-      ? 'abismo profundo: medusas, peces y pinchos hasta el fondo'
-      : 'abismo marino: baja buceando esquivando las trampas'
-    if (i === 7) aviso = '🌊 ¡Al ABISMO! La meta está en el FONDO: baja buceando con cuidado'
+      ? 'abismo profundo: huecos estrechos, patrullas dobles y pinchos'
+      : 'abismo en S: espera a que el guardián de cada hueco se aparte'
+    if (i === 7) aviso = '🌊 ¡Al ABISMO! Busca el hueco de cada piso y ESPERA a que el guardián se aparte'
     if (i === 21) aviso = '🪼 ¡Cuidado con las MEDUSAS! Suben y bajan flotando'
   }
   const numero = Math.min(n, 25)
@@ -220,7 +253,7 @@ export const nivel${n}: LevelData = {
 ${mapa.map((f) => `    '${f}',`).join('\n')}
   ],
   puertas: { tipo: '${tipo}', max: 12 },
-  parMs: ${152000 + i * 2000},${aviso ? `\n  aviso: '${aviso}',` : ''}
+  parMs: ${175000 + i * 2000},${aviso ? `\n  aviso: '${aviso}',` : ''}
 }
 `
   writeFileSync(join(dir, `nivel${n}.ts`), contenido, 'utf8')
