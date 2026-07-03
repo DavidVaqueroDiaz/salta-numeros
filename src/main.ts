@@ -7,6 +7,7 @@ import { Level, TILE, seSolapan, type Door } from './game/level'
 import { CuboVolando } from './game/entities'
 import { Player } from './game/player'
 import { sonido } from './game/sound'
+import { iniciarMusica, setTemaMusica } from './game/music'
 import { NIVELES, esNivelFinal } from './levels/index'
 import { generarPregunta, puertaAjustada } from './math/questions'
 import { abrirPuertaMatematica } from './ui/mathDoor'
@@ -56,6 +57,9 @@ window.addEventListener('pointerdown', () => {
   if (estado === 'intro' && intro) intro.terminado = true
   if (estado === 'cinematica' && cinematica2) cinematica2.terminado = true
 })
+
+// La música solo puede arrancar tras el primer toque (política de autoplay)
+window.addEventListener('pointerdown', () => iniciarMusica(), { once: true })
 
 const hud = document.getElementById('hud')!
 const hudLevel = document.getElementById('hud-level')!
@@ -113,6 +117,7 @@ function avisar(texto: string): void {
 function irAlMenu(): void {
   estado = 'menu'
   level = null
+  setTemaMusica('normal')
   overlayPausa.classList.add('hidden')
   hud.classList.add('hidden')
   controles.classList.add('hidden')
@@ -161,6 +166,7 @@ function empezarNivel(n: number): void {
   level = new Level(data)
   personajeEquipado = cargarPersonajes().equipado
   player.empezar(level)
+  setTemaMusica(level.jefe ? 'jefe' : 'normal')
   renderer.particulas.limpiar()
   overlayPausa.classList.add('hidden')
   tiempoMs = 0

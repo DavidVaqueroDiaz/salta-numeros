@@ -4,6 +4,8 @@ export type TamanoControles = 'pequeno' | 'mediano' | 'grande'
 
 export interface Ajustes {
   sonido: boolean
+  /** música chiptune de fondo (separada de los efectos) */
+  musica: boolean
   tamanoControles: TamanoControles
   /** todos los niveles desbloqueados (protegido por contraseña) */
   desbloqueado: boolean
@@ -13,6 +15,7 @@ const CLAVE = 'salta-numeros-ajustes'
 
 const PREDETERMINADOS: Ajustes = {
   sonido: true,
+  musica: true,
   tamanoControles: 'mediano',
   desbloqueado: false,
 }

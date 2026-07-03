@@ -559,12 +559,14 @@ por la primera casilla sin marcar** (cada fase es independiente).
 - [x] **Contador de estrellas del mundo** en el menú (junto al título del
       mundo: ⭐ conseguidas/posibles del mundo en vista).
 
-### Fase B — Música chiptune ⏳ PENDIENTE
-- [ ] `src/game/music.ts`: melodía chiptune en bucle con WebAudio (osciladores,
-      sin ficheros). Melodías distintas por tema (pradera/cueva/castillo…) o
-      una general + una de jefe.
-- [ ] Ajuste **🎵 Música ON/OFF** separado del sonido (settings.ts + diálogo de
-      ajustes + sync.ts). Arrancar tras el primer toque (política de autoplay).
+### Fase B — Música chiptune ✅ HECHA
+- [x] `src/game/music.ts`: secuenciador WebAudio (osciladores, sin ficheros),
+      melodía cuadrada + bajo triangular. Tema NORMAL (Do mayor, alegre) en
+      fases y menú; tema JEFE (La menor, rápido) en las peleas finales
+      (`setTemaMusica` desde empezarNivel/irAlMenu).
+- [x] Ajuste **🎵 Música ON/OFF** separado del sonido (settings.ts `musica`,
+      fila en Ajustes, aplicado en `aplicarAjustes`; la clave de ajustes ya se
+      sincronizaba entera). Arranca tras el primer toque (autoplay).
 
 ### Fase C — Pistas educativas en las puertas ⏳ PENDIENTE
 - [ ] Al fallar una respuesta en una puerta, mostrar una PISTA visual con

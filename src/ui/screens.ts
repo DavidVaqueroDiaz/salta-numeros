@@ -8,6 +8,7 @@ import {
   type Ajustes,
 } from '../storage/settings'
 import { setSonidoActivado } from '../game/sound'
+import { setMusicaActivada } from '../game/music'
 import {
   cargarMonedero,
   cargarPersonajes,
@@ -34,6 +35,7 @@ let cbCinematica: ((mundo: number, despues: () => void) => void) | null = null
 /** Aplica los ajustes guardados (al arrancar y al cambiarlos). */
 export function aplicarAjustes(ajustes: Ajustes = cargarAjustes()): void {
   setSonidoActivado(ajustes.sonido)
+  setMusicaActivada(ajustes.musica)
   document.body.classList.toggle('controles-grandes', ajustes.tamanoControles === 'grande')
   document.body.classList.toggle('controles-pequenos', ajustes.tamanoControles === 'pequeno')
 }
@@ -683,6 +685,18 @@ function abrirAjustes(alElegir: (nivel: number) => void): void {
     aplicarAjustes(a)
   })
 
+  const filaMusica = filaOpcion(
+    'Música',
+    ajustes.musica,
+    (v) => {
+      const a = { ...cargarAjustes(), musica: v }
+      guardarAjustes(a)
+      aplicarAjustes(a)
+    },
+    '🎵',
+    '🎵',
+  )
+
   // Tamaño de los botones táctiles: pequeño → mediano → grande (cíclico)
   const TAMANOS = ['pequeno', 'mediano', 'grande'] as const
   const NOMBRE_TAMANO = { pequeno: 'PEQUEÑOS', mediano: 'MEDIANOS', grande: 'GRANDES' }
@@ -700,7 +714,7 @@ function abrirAjustes(alElegir: (nivel: number) => void): void {
     pintarTamano()
   })
   pintarTamano()
-  caja.append(filaSonido, filaControles)
+  caja.append(filaSonido, filaMusica, filaControles)
 
   const borrar = document.createElement('button')
   borrar.className = 'ajuste-fila peligro'
