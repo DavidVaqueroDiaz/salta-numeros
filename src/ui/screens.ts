@@ -236,6 +236,34 @@ function dibujarPlaneta(ctx: CanvasRenderingContext2D, cx: number, cy: number, r
 
 /** Icono del jefe final de cada mundo, para ponerlo encima del planeta. */
 function dibujarIconoJefe(ctx: CanvasRenderingContext2D, mundo: number, cx: number, cy: number, s: number): void {
+  if (mundo === 4) {
+    // Kraken (cabezón de pulpo con tentáculos)
+    ctx.strokeStyle = '#7b2d8b'
+    ctx.lineWidth = s * 0.09
+    ctx.lineCap = 'round'
+    for (let i = 0; i < 4; i++) {
+      const tx = cx - s * 0.3 + (i * s * 0.6) / 3
+      ctx.beginPath()
+      ctx.moveTo(tx, cy + s * 0.1)
+      ctx.quadraticCurveTo(tx + (i % 2 ? 6 : -6), cy + s * 0.35, tx + (i % 2 ? 10 : -10), cy + s * 0.48)
+      ctx.stroke()
+    }
+    ctx.fillStyle = '#9d4edd'
+    ctx.beginPath()
+    ctx.ellipse(cx, cy - s * 0.05, s * 0.42, s * 0.38, 0, 0, Math.PI * 2)
+    ctx.fill()
+    for (const lado of [-1, 1]) {
+      ctx.fillStyle = '#fff'
+      ctx.beginPath()
+      ctx.arc(cx + lado * s * 0.15, cy - s * 0.08, s * 0.1, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#1d3557'
+      ctx.beginPath()
+      ctx.arc(cx + lado * s * 0.15, cy - s * 0.08, s * 0.05, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    return
+  }
   if (mundo === 3) {
     // Remolino (embudo girando)
     const capas = 6
@@ -345,8 +373,8 @@ function mostrarLanding(alElegir: (nivel: number) => void): void {
   const galaxia = document.createElement('div')
   galaxia.className = 'planetas'
 
-  const COLORES_PLANETA = ['#52b788', '#9d4edd', '#4cc9f0', '#f77f00']
-  const NOMBRES = ['Pradera y castillo', 'Magia y misterio', 'Cielo y tormenta', '???']
+  const COLORES_PLANETA = ['#52b788', '#9d4edd', '#4cc9f0', '#0096c7']
+  const NOMBRES = ['Pradera y castillo', 'Magia y misterio', 'Cielo y tormenta', 'Torre y abismo']
 
   // mundos reales (existentes)
   MUNDOS.forEach((m, i) => {

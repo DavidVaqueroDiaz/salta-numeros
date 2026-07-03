@@ -5,8 +5,8 @@ import type { Level } from './level'
 import { paramsDificultad } from './dificultad'
 import { Enemigo } from './entities'
 
-/** Jefe final, cualquiera de los tres (comparten interfaz para main/renderer). */
-export type JefeFinal = Jefe | MagoOscuro | Tornado
+/** Jefe final, cualquiera de los cuatro (comparten interfaz para main/renderer). */
+export type JefeFinal = Jefe | MagoOscuro | Tornado | Kraken
 
 /** Bola de fuego del jefe: vuela en arco y se apaga al tocar algo. */
 export class BolaFuego {
@@ -383,6 +383,121 @@ export class Tornado {
   /** Pierde un corazón (pisotón acertado o cubo de Rubik). */
   golpear(): void {
     this.vidas--
+    if (this.vidas <= 0) {
+      this.muerto = true
+      this.squashT = 0.6
+    }
+  }
+}
+
+/** Burbuja del Kraken: SUBE desde el fondo buscando al jugador, meciéndose. */
+export class Burbuja {
+  viva = true
+  private t = 0
+  constructor(
+    public x: number,
+    public y: number,
+    public vx: number,
+    public vy: number,
+  ) {}
+
+  rect(): Rect {
+    return { x: this.x - 9, y: this.y - 9, w: 18, h: 18 }
+  }
+
+  update(dt: number, level: Level): void {
+    this.t += dt
+    this.x += (this.vx + Math.sin(this.t * 6) * 30) * dt
+    this.y += this.vy * dt
+    const c = Math.floor(this.x / TILE)
+    const r = Math.floor(this.y / TILE)
+    if (level.esSolido(c, r) || this.y < -40 || this.t > 6) this.viva = false
+  }
+}
+
+/**
+ * El Kraken (jefe del Mundo 4): pulpo gigante que patrulla el fondo del mar y
+ * lanza burbujas que SUBEN hacia el jugador. Pisotón buceando hacia abajo →
+ * reto de mates; el cubo de Rubik también le quita un corazón.
+ */
+export class Kraken {
+  readonly tipo = 'kraken'
+  readonly w = 88
+  readonly h = 68
+  x: number
+  y: number
+  dir: 1 | -1 = -1
+  vidas: number
+  vel = 45
+  invulT = 0
+  muerto = false
+  squashT = 0
+  /** fase para animar los tentáculos */
+  giro = 0
+  readonly bolas: Burbuja[] = []
+  private lanzaT = 2.2
+  private readonly minX: number
+  private readonly maxX: number
+
+  constructor(col: number, fila: number) {
+    this.x = col * TILE + (TILE - this.w) / 2
+    this.y = (fila + 1) * TILE - this.h
+    this.minX = this.x - 14 * TILE
+    this.maxX = this.x + 14 * TILE
+    this.vidas = paramsDificultad().jefeVidas
+  }
+
+  rect(): Rect {
+    return { x: this.x, y: this.y, w: this.w, h: this.h }
+  }
+
+  update(dt: number, level: Level, jugador?: Rect, invisible = false): void {
+    for (const b of this.bolas) b.update(dt, level)
+    this.bolas.splice(0, this.bolas.length, ...this.bolas.filter((b) => b.viva))
+    this.giro += dt * 3
+    if (this.muerto) {
+      this.squashT = Math.max(0, this.squashT - dt)
+      return
+    }
+    this.invulT = Math.max(0, this.invulT - dt)
+
+    // burbujas hacia el jugador (más seguidas con menos corazones)
+    if (jugador && !invisible) {
+      this.lanzaT -= dt
+      const distancia = Math.abs(jugador.x + jugador.w / 2 - (this.x + this.w / 2))
+      if (this.lanzaT <= 0 && distancia < 20 * TILE) {
+        const haciaIzq = jugador.x + jugador.w / 2 < this.x + this.w / 2
+        this.bolas.push(
+          new Burbuja(
+            this.x + this.w / 2,
+            this.y + 8,
+            (haciaIzq ? -1 : 1) * (40 + Math.random() * 50),
+            -110 - Math.random() * 60,
+          ),
+        )
+        this.lanzaT = 2.3 - Math.max(0, 3 - this.vidas) * 0.35
+      }
+    }
+
+    // patrulla el lecho marino sin caerse por los bordes
+    const mul = paramsDificultad().velMul
+    const nx = this.x + this.dir * this.vel * mul * dt
+    const frente = Math.floor((this.dir > 0 ? nx + this.w : nx) / TILE)
+    const filaCuerpo = Math.floor((this.y + this.h / 2) / TILE)
+    const filaSuelo = Math.floor((this.y + this.h + 2) / TILE)
+    const bloqueado =
+      nx < this.minX ||
+      nx + this.w > this.maxX ||
+      level.esSolido(frente, filaCuerpo) ||
+      !level.esSolido(frente, filaSuelo)
+    if (bloqueado) this.dir = this.dir === 1 ? -1 : 1
+    else this.x = nx
+  }
+
+  /** Pierde un corazón (pisotón buceando o cubo de Rubik). */
+  golpear(): void {
+    this.vidas--
+    this.vel += 25
     if (this.vidas <= 0) {
       this.muerto = true
       this.squashT = 0.6

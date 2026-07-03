@@ -39,6 +39,8 @@ export class Player {
   squashT = 0
   /** true SOLO el frame en que aterriza fuerte (main emite el polvo) */
   aterrizoFuerte = false
+  /** impulso externo (trampolín, Remolino): mientras dure no se recorta el salto */
+  impulsoT = 0
   /** evita rebotar entre tubos al instante */
   tuboCooldownT = 0
   /** ¿está nadando ahora mismo? (lo rellena update) */
@@ -82,6 +84,7 @@ export class Player {
     this.enSuelo = false
     this.plataforma = null
     this.girandoT = 0.6
+    this.impulsoT = 0.6
   }
 
   respawn(): void {
@@ -110,6 +113,7 @@ export class Player {
     this.volarT = Math.max(0, this.volarT - dt)
     this.estrellaT = Math.max(0, this.estrellaT - dt)
     this.girandoT = Math.max(0, this.girandoT - dt)
+    this.impulsoT = Math.max(0, this.impulsoT - dt)
     this.tuboCooldownT = Math.max(0, this.tuboCooldownT - dt)
     this.enAgua = level.esAgua(
       Math.floor((this.x + this.w / 2) / TILE),
@@ -186,7 +190,8 @@ export class Player {
         sonido.salto()
       }
       // Salto variable: si suelta el botón mientras sube, corta el impulso
-      if (!input.jumpHeld && this.vy < -200) this.vy = -200
+      // (pero NO el de un trampolín o un empujón: ese vuela entero)
+      if (!input.jumpHeld && this.vy < -200 && this.impulsoT <= 0) this.vy = -200
 
       // gravedad lunar en los niveles de espacio: saltos altos y flotantes
       const gravedad = level.data.gravedadBaja ? GRAVEDAD * 0.45 : GRAVEDAD

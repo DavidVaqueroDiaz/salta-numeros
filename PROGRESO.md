@@ -586,6 +586,37 @@ por la primera casilla sin marcar** (cada fase es independiente).
       con nombres bonitos (suma, resta, tablas…). Añadir la clave a sync.ts
       (CLAVES + fusión sumando ambos lados).
 
+## 🗼 MUNDO 4 VERTICAL (2026-07-03, Fable 5) — EN CURSO
+
+Niveles 109-143 + jefe 144. Fases VERTICALES: **torres** (subir saltando de
+plataforma en plataforma hasta la meta arriba) y **abismos marinos** (bajar
+buceando esquivando pinchos, peces y medusas hasta la meta en el fondo).
+
+- [x] Mecánicas nuevas en el motor:
+      · **Trampolín** ('J', entities.ts `Trampolin`): al caerle encima te lanza
+        vy −880 (~7,7 tiles de subida). OJO: el salto variable recortaba
+        cualquier subida a −200 → nuevo `player.impulsoT` (el impulso de
+        trampolín/Remolino no se recorta). Muelle rojo/blanco que se comprime.
+      · **Medusa** ('u', entities.ts `Medusa`): flota arriba/abajo en el agua
+        (±2,2 tiles); solo se esquiva (la estrella protege). Rosa translúcida.
+      · **El Kraken** ('K', boss.ts `Kraken` + `Burbuja`): patrulla el lecho
+        marino y lanza burbujas que SUBEN meciéndose hacia ti; pisotón
+        buceando → mates; el cubo le quita vida. Vidas = jefeVidas por modo.
+- [x] `tools/gen-levels4.mjs`: `torre()` (zigzag ping-pong de plataformas de 5,
+      subida 2 filas, puerta de mates en un piso, trampolines/vigilantes/
+      pinchos según zona) y `sima()` (pozo de agua con salientes alternos,
+      pinchos, checkpoint a media bajada, puerta junto al fondo; bichos SOLO
+      en celdas de agua). Zonas: torres 109-115, simas 116-122, torres duras
+      123-129, simas profundas 130-136, mixto 137-143. Arena del Kraken (144).
+- [x] Integración: index.ts (MUNDOS 4º = 109-143 + 144), landing (planeta
+      azul "Torre y abismo" + icono kraken; Mundo 5-6 "próximamente"),
+      cinemática del Mundo 4 (playa: el Kraken surge del mar, atrapa a Xiana
+      y se la lleva al fondo, 12 s), validadores ('K','J' pisan suelo; 'u' es
+      agua en check-passable).
+- [x] Verificado: torre 109 (spawn abajo, meta arriba, bote −880 real), sima
+      116 (spawn arriba, meta en el fondo, peces+medusas), Kraken (burbujas,
+      cubo 3→2), landing con 4 mundos. Los 3 checkers y build en verde.
+
 ### Fase E — Cierre con premio ⏳ PENDIENTE
 - [ ] Cinemática de cierre al completar el jefe del Mundo 3 (los tres
       monstruos vencidos, Xiana y el personaje celebran).

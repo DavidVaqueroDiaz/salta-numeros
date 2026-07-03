@@ -58,7 +58,7 @@ for (const fichero of ficheros) {
   // 4. Pinchos, enemigos, jefe, Xiana, P y M: todos sobre suelo (no lava)
   filas.forEach((f, r) =>
     [...f].forEach((ch, c) => {
-      if ('^EPMBXVZ'.includes(ch) && !esSuelo(get(c, r + 1)))
+      if ('^EPMBXVZKJ'.includes(ch) && !esSuelo(get(c, r + 1)))
         fallo(fichero, `'${ch}' en (col ${c}, fila ${r}) sin suelo debajo`)
     }),
   )

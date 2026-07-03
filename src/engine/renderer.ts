@@ -119,9 +119,11 @@ export class Renderer {
     this.puertas(level)
     this.monedasDibujo(level)
     this.itemsDibujo(level)
+    this.trampolinesDibujo(level)
     this.enemigosDibujo(level)
     this.vigilantesDibujo(level, player)
     this.pecesDibujo(level)
+    this.medusasDibujo(level)
     this.cubosDibujo(level)
     this.jefeDibujo(level)
     this.xianaDibujo(level)
@@ -355,6 +357,63 @@ export class Renderer {
   private cubosDibujo(level: Level): void {
     for (const cubo of level.cubosVolando) {
       this.dibujarCubo(cubo.x + cubo.w / 2, cubo.y + cubo.h / 2, cubo.w, cubo.giro)
+    }
+  }
+
+  /** Trampolín: base roja con muelle; se aplasta un instante tras el bote. */
+  private trampolinesDibujo(level: Level): void {
+    const ctx = this.ctx
+    for (const tr of level.trampolines) {
+      const apl = tr.compresionT > 0 ? 0.55 : 1
+      const h = tr.h * apl
+      const y = tr.y + tr.h - h
+      // muelle (zigzag gris)
+      ctx.strokeStyle = '#8d99ae'
+      ctx.lineWidth = 2.5
+      ctx.beginPath()
+      for (let i = 0; i <= 3; i++) {
+        const yy = y + (h / 3) * i
+        ctx[i === 0 ? 'moveTo' : 'lineTo'](tr.x + (i % 2 === 0 ? 8 : tr.w - 8), yy)
+      }
+      ctx.stroke()
+      // plataforma superior roja con franja blanca
+      ctx.fillStyle = '#e63946'
+      ctx.beginPath()
+      ctx.roundRect(tr.x + 2, y - 5, tr.w - 4, 7, 3)
+      ctx.fill()
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(tr.x + 6, y - 3, tr.w - 12, 2)
+    }
+  }
+
+  /** Medusa rosa: campana translúcida con tentáculos ondulantes. */
+  private medusasDibujo(level: Level): void {
+    const ctx = this.ctx
+    const t = performance.now() / 1000
+    for (const med of level.medusas) {
+      const cx = med.x + med.w / 2
+      const y = med.y
+      ctx.fillStyle = 'rgba(255,143,171,0.85)'
+      ctx.beginPath()
+      ctx.arc(cx, y + 10, 12, Math.PI, 2 * Math.PI)
+      ctx.fill()
+      ctx.fillRect(cx - 12, y + 9, 24, 4)
+      // tentáculos
+      ctx.strokeStyle = 'rgba(255,143,171,0.7)'
+      ctx.lineWidth = 2.5
+      for (let i = 0; i < 4; i++) {
+        const tx = cx - 9 + i * 6
+        ctx.beginPath()
+        ctx.moveTo(tx, y + 13)
+        ctx.quadraticCurveTo(tx + Math.sin(t * 4 + i) * 4, y + 20, tx + Math.sin(t * 4 + i + 1) * 5, y + 26)
+        ctx.stroke()
+      }
+      // ojitos
+      ctx.fillStyle = '#1d3557'
+      ctx.beginPath()
+      ctx.arc(cx - 4, y + 6, 1.8, 0, Math.PI * 2)
+      ctx.arc(cx + 4, y + 6, 1.8, 0, Math.PI * 2)
+      ctx.fill()
     }
   }
 
@@ -798,8 +857,23 @@ export class Renderer {
     if (!j) return
     const ctx = this.ctx
     const esMago = j.tipo === 'mago'
-    // proyectiles: orbes mágicos (mago) o bolas de fuego (comecubos)
+    const esKraken = j.tipo === 'kraken'
+    // proyectiles: burbujas (kraken), orbes mágicos (mago) o fuego (comecubos)
     for (const b of j.bolas) {
+      if (esKraken) {
+        ctx.strokeStyle = 'rgba(180,225,255,0.95)'
+        ctx.lineWidth = 2.5
+        ctx.fillStyle = 'rgba(140,200,255,0.35)'
+        ctx.beginPath()
+        ctx.arc(b.x, b.y, 9, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.stroke()
+        ctx.fillStyle = 'rgba(255,255,255,0.9)'
+        ctx.beginPath()
+        ctx.arc(b.x - 3, b.y - 3, 2.5, 0, Math.PI * 2)
+        ctx.fill()
+        continue
+      }
       ctx.fillStyle = esMago ? '#9d4edd' : '#f3722c'
       ctx.beginPath()
       ctx.arc(b.x, b.y, 9, 0, Math.PI * 2)
@@ -822,6 +896,7 @@ export class Renderer {
 
     if (j.tipo === 'mago') this.magoCuerpo(j, y, h)
     else if (j.tipo === 'tornado') this.tornadoCuerpo(j, y, h)
+    else if (j.tipo === 'kraken') this.krakenCuerpo(j, y, h)
     else this.comecubosCuerpo(j, y, h)
 
     if (!j.muerto) {
@@ -914,6 +989,60 @@ export class Renderer {
         ctx.stroke()
       }
     }
+  }
+
+  /** Cuerpo del Kraken: cabezón de pulpo morado con tentáculos ondulantes. */
+  private krakenCuerpo(
+    j: { x: number; w: number; dir: number; muerto: boolean; giro: number },
+    y: number,
+    h: number,
+  ): void {
+    const ctx = this.ctx
+    const cx = j.x + j.w / 2
+    const base = y + h
+    // tentáculos (detrás del cuerpo, ondulando)
+    ctx.strokeStyle = '#7b2d8b'
+    ctx.lineWidth = 9
+    ctx.lineCap = 'round'
+    for (let i = 0; i < 5; i++) {
+      const tx = j.x + 10 + (i * (j.w - 20)) / 4
+      const onda = Math.sin(j.giro * 2 + i * 1.3) * 10
+      ctx.beginPath()
+      ctx.moveTo(tx, base - h * 0.3)
+      ctx.quadraticCurveTo(tx + onda, base - 6, tx + onda * 1.6, base + 2)
+      ctx.stroke()
+    }
+    // cabezón
+    ctx.fillStyle = '#9d4edd'
+    ctx.beginPath()
+    ctx.ellipse(cx, y + h * 0.42, j.w / 2, h * 0.46, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = '#6a2c91'
+    ctx.lineWidth = 3
+    ctx.stroke()
+    if (j.muerto) return
+    // ojazos y boca enfadada
+    for (const lado of [-1, 1]) {
+      const ex = cx + lado * 17
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.arc(ex, y + h * 0.36, 10, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#1d3557'
+      ctx.beginPath()
+      ctx.arc(ex + j.dir * 3, y + h * 0.36, 4.5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = '#3c096c'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.moveTo(ex - lado * 11, y + h * 0.2)
+      ctx.lineTo(ex + lado * 9, y + h * 0.27)
+      ctx.stroke()
+    }
+    ctx.strokeStyle = '#3c096c'
+    ctx.beginPath()
+    ctx.arc(cx, y + h * 0.62, 8, 1.15 * Math.PI, 1.85 * Math.PI)
+    ctx.stroke()
   }
 
   /** Cuerpo del Mago Oscuro: túnica morada, gorro de pico con estrella y ojos. */

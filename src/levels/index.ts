@@ -107,6 +107,42 @@ import { nivel105 } from './nivel105'
 import { nivel106 } from './nivel106'
 import { nivel107 } from './nivel107'
 import { nivelFinal3 } from './nivelfinal3'
+import { nivel109 } from './nivel109'
+import { nivel110 } from './nivel110'
+import { nivel111 } from './nivel111'
+import { nivel112 } from './nivel112'
+import { nivel113 } from './nivel113'
+import { nivel114 } from './nivel114'
+import { nivel115 } from './nivel115'
+import { nivel116 } from './nivel116'
+import { nivel117 } from './nivel117'
+import { nivel118 } from './nivel118'
+import { nivel119 } from './nivel119'
+import { nivel120 } from './nivel120'
+import { nivel121 } from './nivel121'
+import { nivel122 } from './nivel122'
+import { nivel123 } from './nivel123'
+import { nivel124 } from './nivel124'
+import { nivel125 } from './nivel125'
+import { nivel126 } from './nivel126'
+import { nivel127 } from './nivel127'
+import { nivel128 } from './nivel128'
+import { nivel129 } from './nivel129'
+import { nivel130 } from './nivel130'
+import { nivel131 } from './nivel131'
+import { nivel132 } from './nivel132'
+import { nivel133 } from './nivel133'
+import { nivel134 } from './nivel134'
+import { nivel135 } from './nivel135'
+import { nivel136 } from './nivel136'
+import { nivel137 } from './nivel137'
+import { nivel138 } from './nivel138'
+import { nivel139 } from './nivel139'
+import { nivel140 } from './nivel140'
+import { nivel141 } from './nivel141'
+import { nivel142 } from './nivel142'
+import { nivel143 } from './nivel143'
+import { nivelFinal4 } from './nivelfinal4'
 
 /** Colores oficiales estilo Numberblocks, del 1 al 10. */
 export const COLORES: Record<number, string> = {
@@ -233,6 +269,43 @@ export const NIVELES: Record<number, LevelData> = {
   106: nivel106,
   107: nivel107,
   108: nivelFinal3, // el Remolino y Xiana (final del Mundo 3)
+  // ----- MUNDO 4 (109-143, vertical: torres y abismos) + Kraken (144) -----
+  109: nivel109,
+  110: nivel110,
+  111: nivel111,
+  112: nivel112,
+  113: nivel113,
+  114: nivel114,
+  115: nivel115,
+  116: nivel116,
+  117: nivel117,
+  118: nivel118,
+  119: nivel119,
+  120: nivel120,
+  121: nivel121,
+  122: nivel122,
+  123: nivel123,
+  124: nivel124,
+  125: nivel125,
+  126: nivel126,
+  127: nivel127,
+  128: nivel128,
+  129: nivel129,
+  130: nivel130,
+  131: nivel131,
+  132: nivel132,
+  133: nivel133,
+  134: nivel134,
+  135: nivel135,
+  136: nivel136,
+  137: nivel137,
+  138: nivel138,
+  139: nivel139,
+  140: nivel140,
+  141: nivel141,
+  142: nivel142,
+  143: nivel143,
+  144: nivelFinal4, // el Kraken y Xiana (final del Mundo 4)
 }
 
 /** Número de fases normales por mundo (sin contar el jefe). */
@@ -254,6 +327,7 @@ export const MUNDOS: Mundo[] = [
   { num: 1, primero: 1, ultimo: 35, final: 36 },
   { num: 2, primero: 37, ultimo: 71, final: 72 },
   { num: 3, primero: 73, ultimo: 107, final: 108 },
+  { num: 4, primero: 109, ultimo: 143, final: 144 },
 ]
 
 /** Número del nivel final del Mundo 1 (compatibilidad). */

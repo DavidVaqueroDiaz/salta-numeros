@@ -342,6 +342,62 @@ export class Pez {
   }
 }
 
+/**
+ * Trampolín ('J'): muelle que te lanza altísimo al caerle encima.
+ * Clave en las torres del Mundo 4 para subir varios pisos de golpe.
+ */
+export class Trampolin {
+  readonly w = TILE
+  readonly h = 14
+  readonly x: number
+  readonly y: number
+  /** compresión visual tras un bote (el renderer lo dibuja aplastado) */
+  compresionT = 0
+
+  constructor(col: number, fila: number) {
+    this.x = col * TILE
+    this.y = fila * TILE + TILE - this.h
+  }
+
+  rect(): Rect {
+    return { x: this.x + 2, y: this.y - 4, w: this.w - 4, h: this.h + 4 }
+  }
+
+  update(dt: number): void {
+    this.compresionT = Math.max(0, this.compresionT - dt)
+  }
+}
+
+/**
+ * Medusa ('u'): bicho marino que flota subiendo y bajando en el agua.
+ * No se puede pisar, solo esquivar (la estrella protege).
+ */
+export class Medusa {
+  readonly w = 24
+  readonly h = 26
+  readonly x: number
+  private readonly y0: number
+  private t: number
+
+  constructor(col: number, fila: number) {
+    this.x = col * TILE + (TILE - this.w) / 2
+    this.y0 = fila * TILE + (TILE - this.h) / 2
+    this.t = (col % 5) * 0.9 // desfase para que no floten todas a la vez
+  }
+
+  get y(): number {
+    return this.y0 + Math.sin(this.t * 1.3) * TILE * 2.2
+  }
+
+  rect(): Rect {
+    return { x: this.x, y: this.y, w: this.w, h: this.h }
+  }
+
+  update(dt: number): void {
+    this.t += dt
+  }
+}
+
 /** Tubo estilo Mario: tocarlo te lleva a su pareja (entrada↔salida). */
 export class Tubo {
   readonly x: number

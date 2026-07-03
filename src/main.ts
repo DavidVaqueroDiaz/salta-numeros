@@ -496,6 +496,27 @@ function update(dt: number): void {
     }
   }
 
+  // Medusas: flotan arriba y abajo en el agua; tocarlas = respawn
+  for (const med of level.medusas) {
+    med.update(dt)
+    if (!estrella && seSolapan(player.rect(), med.rect())) {
+      morir()
+      break
+    }
+  }
+
+  // Trampolines: caerles encima te lanza altísimo (torres del Mundo 4)
+  for (const tr of level.trampolines) {
+    tr.update(dt)
+    if (player.vy > 60 && seSolapan(player.rect(), tr.rect())) {
+      player.vy = -880
+      player.impulsoT = 0.6 // que el salto variable no recorte el bote
+      tr.compresionT = 0.25
+      sonido.salto()
+      renderer.particulas.polvo(tr.x + tr.w / 2, tr.y)
+    }
+  }
+
   // Tubos: tocar la boca te lleva al tubo pareja
   if (player.tuboCooldownT <= 0) {
     for (const tubo of level.tubos) {

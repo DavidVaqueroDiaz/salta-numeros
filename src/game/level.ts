@@ -4,16 +4,18 @@ import {
   CuboVolando,
   Enemigo,
   ItemPoder,
+  Medusa,
   Moneda,
   Pez,
   PlataformaCaediza,
   PlataformaMovil,
   PlataformaParpadeante,
+  Trampolin,
   Tubo,
   Vigilante,
   type PlataformaPisable,
 } from './entities'
-import { Jefe, MagoOscuro, Tornado, Xiana, type JefeFinal } from './boss'
+import { Jefe, Kraken, MagoOscuro, Tornado, Xiana, type JefeFinal } from './boss'
 import { paramsDificultad } from './dificultad'
 
 export const TILE = 32
@@ -64,6 +66,8 @@ export class Level {
   readonly items: ItemPoder[] = []
   readonly cubosVolando: CuboVolando[] = []
   readonly parpadeantes: PlataformaParpadeante[] = []
+  readonly trampolines: Trampolin[] = []
+  readonly medusas: Medusa[] = []
   jefe: JefeFinal | null = null
   xiana: Xiana | null = null
 
@@ -135,6 +139,13 @@ export class Level {
           this.tiles[r * this.cols + c] = LAVA
         } else if (ch === 'b') {
           this.parpadeantes.push(new PlataformaParpadeante(c, r))
+        } else if (ch === 'J') {
+          this.trampolines.push(new Trampolin(c, r))
+        } else if (ch === 'u') {
+          this.tiles[r * this.cols + c] = AGUA // la medusa flota en el agua
+          this.medusas.push(new Medusa(c, r))
+        } else if (ch === 'K') {
+          this.jefe = new Kraken(c, r) // jefe del Mundo 4
         }
       }
     }

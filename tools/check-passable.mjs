@@ -87,7 +87,7 @@ for (const fichero of ficheros) {
   const tab = lunar ? TAB_LUNAR : TAB_NORMAL
 
   const ch = (c, r) => (r < 0 || r >= rows || c < 0 || c >= cols ? '.' : (filas[r][c] ?? '.'))
-  const esAgua = (c, r) => ch(c, r) === '~' || ch(c, r) === 'f'
+  const esAgua = (c, r) => ch(c, r) === '~' || ch(c, r) === 'f' || ch(c, r) === 'u'
   // una plataforma móvil da apoyo en todo su recorrido (m/w ±2 tiles, n ±9)
   const soporte = (c, r) => {
     if (SOLIDO.has(ch(c, r)) || PLATAFORMA.has(ch(c, r))) return true

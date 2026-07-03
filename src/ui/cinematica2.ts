@@ -24,7 +24,7 @@ export class Cinematica {
     private readonly personaje: number,
   ) {
     // el Mundo 2 (secuestro) dura más para leer bien los subtítulos
-    this.duracion = mundo === 2 ? 14 : mundo === 3 ? 9 : 7.5
+    this.duracion = mundo === 2 ? 14 : mundo === 3 ? 9 : mundo === 4 ? 12 : 7.5
   }
 
   update(dt: number): void {
@@ -39,9 +39,11 @@ export class Cinematica {
     const t = this.t
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     if (this.mundo === 3) this.cieloTormenta(ctx, w, h, t)
+    else if (this.mundo === 4) this.playa(ctx, w, h)
     else this.parque(ctx, w, h, t)
     if (this.mundo === 2) this.guionMundo2(ctx, w, h, t)
     else if (this.mundo === 3) this.guionMundo3(ctx, w, h, t)
+    else if (this.mundo === 4) this.guionMundo4(ctx, w, h, t)
     else this.guionMundo1(ctx, w, h, t)
 
     // pista para saltar
@@ -251,6 +253,117 @@ export class Cinematica {
       ctx.ellipse(cx + desf, ey, ew / 2, Math.max(4, alto * 0.04 * f + 3), 0, 0, Math.PI * 2)
       ctx.fill()
     }
+  }
+
+  /** Playa para el Mundo 4: cielo, mar a la derecha y arena. */
+  private playa(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const cielo = ctx.createLinearGradient(0, 0, 0, h)
+    cielo.addColorStop(0, '#8ecae6')
+    cielo.addColorStop(1, '#cdeafe')
+    ctx.fillStyle = cielo
+    ctx.fillRect(0, 0, w, h)
+    ctx.fillStyle = '#ffd60a'
+    ctx.beginPath()
+    ctx.arc(w * 0.12, h * 0.16, h * 0.07, 0, Math.PI * 2)
+    ctx.fill()
+    // arena a la izquierda, mar a la derecha
+    const sueloY = h * 0.82
+    ctx.fillStyle = '#f4d58d'
+    ctx.fillRect(0, sueloY, w * 0.55, h - sueloY)
+    ctx.fillStyle = '#0096c7'
+    ctx.fillRect(w * 0.5, sueloY - h * 0.02, w * 0.5, h)
+    ctx.fillStyle = '#48cae4'
+    ctx.fillRect(w * 0.5, sueloY - h * 0.02, w * 0.5, h * 0.03)
+  }
+
+  /** Mundo 4: el Kraken surge del mar y arrastra a Xiana al fondo. */
+  private guionMundo4(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
+    const sueloY = h * 0.82
+    const bs = h * 0.055
+    const tKraken = 4.0
+    const tCaptura = 6.5
+    const tHunde = 8.5
+
+    // personaje en la arena (jugando; luego asustado)
+    const bote = t < tCaptura ? Math.abs(Math.sin(t * 4)) * h * 0.03 : 0
+    dibujarPersonaje(ctx, this.personaje, w * 0.3, sueloY - bote, 1, bs)
+    if (t >= tCaptura) {
+      ctx.fillStyle = '#e63946'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.font = `bold ${Math.round(h * 0.07)}px sans-serif`
+      ctx.fillText('!', w * 0.3, sueloY - bs * 4)
+    }
+
+    // Xiana en la orilla; al hundirse baja con la jaula al mar
+    let xiX = w * 0.44
+    let xiY = sueloY
+    if (t >= tHunde) {
+      const v = easeOut(clamp01((t - tHunde) / (this.duracion - tHunde)))
+      xiX = w * 0.44 + v * w * 0.26
+      xiY = sueloY + v * h * 0.3
+    }
+    this.dibujarXiana(ctx, xiX, xiY, bs)
+    if (t >= tCaptura) this.dibujarJaula(ctx, xiX, xiY, bs)
+
+    // el Kraken emerge del mar
+    if (t >= tKraken) {
+      const sube = easeOut(clamp01((t - tKraken) / 1.2))
+      let ky = sueloY + h * 0.25 - sube * h * 0.28
+      if (t >= tHunde) {
+        const v = easeOut(clamp01((t - tHunde) / (this.duracion - tHunde)))
+        ky = sueloY - h * 0.03 + v * h * 0.4
+      }
+      const kx = w * 0.7
+      const R = h * 0.11
+      // tentáculos
+      ctx.strokeStyle = '#7b2d8b'
+      ctx.lineWidth = 10
+      ctx.lineCap = 'round'
+      for (let i = 0; i < 5; i++) {
+        const tx = kx - R + (i * R) / 2
+        const onda = Math.sin(t * 4 + i) * 12
+        ctx.beginPath()
+        ctx.moveTo(tx, ky + R * 0.4)
+        ctx.quadraticCurveTo(tx + onda, ky + R * 1.3, tx + onda * 1.5, ky + R * 1.9)
+        ctx.stroke()
+      }
+      // tentáculo hacia Xiana durante la captura
+      if (t >= tCaptura - 0.6 && t < tHunde + 1) {
+        ctx.beginPath()
+        ctx.moveTo(kx - R, ky)
+        ctx.quadraticCurveTo((kx + xiX) / 2, sueloY - h * 0.16, xiX, xiY - bs * 1.6)
+        ctx.stroke()
+      }
+      // cabezón y ojos
+      ctx.fillStyle = '#9d4edd'
+      ctx.beginPath()
+      ctx.ellipse(kx, ky, R * 1.25, R, 0, 0, Math.PI * 2)
+      ctx.fill()
+      for (const lado of [-1, 1]) {
+        ctx.fillStyle = '#fff'
+        ctx.beginPath()
+        ctx.arc(kx + lado * R * 0.45, ky - R * 0.15, R * 0.28, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#1d3557'
+        ctx.beginPath()
+        ctx.arc(kx + lado * R * 0.45 - 3, ky - R * 0.15, R * 0.13, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      // salpicaduras
+      ctx.fillStyle = 'rgba(180,225,255,0.9)'
+      for (let i = 0; i < 5; i++) {
+        const f = (t * 2 + i * 0.3) % 1
+        ctx.beginPath()
+        ctx.arc(kx - R + i * R * 0.5, sueloY - f * h * 0.06, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+
+    this.subtitulo(ctx, w, h, 'Un día tranquilo en la playa…', fade(t, 0.4, 3.2, 3.8))
+    this.subtitulo(ctx, w, h, '¡Del mar surgió el KRAKEN!', fade(t, 4.2, 5.8, 6.3), '#7b2d8b')
+    this.subtitulo(ctx, w, h, '¡Atrapó a Xiana con sus tentáculos!', fade(t, 6.6, 8.0, 8.4), '#7b2d8b')
+    this.subtitulo(ctx, w, h, '¡Se la lleva al FONDO DEL MAR! ¡Bucea y sálvala!', fade(t, 8.8, 11.2, 11.9), '#e63946')
   }
 
   private subtitulo(ctx: CanvasRenderingContext2D, w: number, h: number, texto: string, a: number, color = '#1d3557'): void {
