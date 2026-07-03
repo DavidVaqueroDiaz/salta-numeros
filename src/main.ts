@@ -32,7 +32,7 @@ import { Cinematica } from './ui/cinematica2'
 
 registerSW({ immediate: true })
 
-type Estado = 'intro' | 'cinematica' | 'menu' | 'jugando' | 'puerta' | 'resultados'
+type Estado = 'intro' | 'cinematica' | 'menu' | 'jugando' | 'pausa' | 'puerta' | 'resultados'
 
 let estado: Estado = 'intro'
 let intro: Intro | null = new Intro()
@@ -65,6 +65,24 @@ const hudLives = document.getElementById('hud-lives')!
 const controles = document.getElementById('controls')!
 document.getElementById('hud-exit')!.addEventListener('click', irAlMenu)
 
+// --- Pausa: botón ⏸ del HUD, tocar el overlay, o teclas P / Escape ---
+const overlayPausa = document.getElementById('pausa')!
+function alternarPausa(): void {
+  if (estado === 'jugando') {
+    estado = 'pausa'
+    resetInput()
+    overlayPausa.classList.remove('hidden')
+  } else if (estado === 'pausa') {
+    estado = 'jugando'
+    overlayPausa.classList.add('hidden')
+  }
+}
+document.getElementById('hud-pause')!.addEventListener('click', alternarPausa)
+overlayPausa.addEventListener('click', alternarPausa)
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') alternarPausa()
+})
+
 function actualizarMonedasHud(): void {
   if (!level) return
   const recogidas = level.monedas.filter((m) => m.recogida).length
@@ -95,6 +113,7 @@ function avisar(texto: string): void {
 function irAlMenu(): void {
   estado = 'menu'
   level = null
+  overlayPausa.classList.add('hidden')
   hud.classList.add('hidden')
   controles.classList.add('hidden')
   document.getElementById('poderes')!.classList.add('hidden')
@@ -142,6 +161,8 @@ function empezarNivel(n: number): void {
   level = new Level(data)
   personajeEquipado = cargarPersonajes().equipado
   player.empezar(level)
+  renderer.particulas.limpiar()
+  overlayPausa.classList.add('hidden')
   tiempoMs = 0
   erroresPuertas = 0
   resetInput()
@@ -405,6 +426,12 @@ function update(dt: number): void {
 
   player.update(dt, level)
 
+  // jugo visual: polvo al aterrizar fuerte + avance de las partículas vivas
+  if (player.aterrizoFuerte) {
+    renderer.particulas.polvo(player.x + player.w / 2, player.y + player.h)
+  }
+  renderer.particulas.update(dt)
+
   // Ítems de poder: se guardan en el inventario (iconos de la izquierda)
   for (const item of level.items) {
     if (item.recogido || !seSolapan(player.rect(), item.rect())) continue
@@ -447,6 +474,7 @@ function update(dt: number): void {
       v.squashT = 0.4
       if (!estrella) player.vy = -340 // con estrella no rebotas: lo atropellas
       sonido.pisoton()
+      renderer.particulas.pisoton(v.x + v.w / 2, v.y)
     } else {
       morir()
       break
@@ -543,6 +571,7 @@ function update(dt: number): void {
       e.squashT = 0.4
       if (!estrella) player.vy = -340 // rebote (con estrella lo atropellas)
       sonido.pisoton()
+      renderer.particulas.pisoton(e.x + e.w / 2, e.y)
     } else {
       morir()
       break
@@ -573,6 +602,7 @@ function update(dt: number): void {
       bicho.squashT = 0.4
       cubo.kills++
       sonido.pisoton()
+      renderer.particulas.pisoton(bicho.x + bicho.w / 2, bicho.y)
       if (cubo.kills >= 2) {
         cubo.viva = false
         break
@@ -594,6 +624,7 @@ function update(dt: number): void {
     if (!m.recogida && seSolapan(player.rect(), m.rect())) {
       m.recogida = true
       sonido.moneda()
+      renderer.particulas.moneda(m.cx, m.cy)
       actualizarMonedasHud()
     }
   }

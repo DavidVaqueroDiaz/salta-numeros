@@ -93,9 +93,17 @@ export function mostrarMenu(
   // Título del mundo + botón para abrir el selector de mundos (la "landing")
   const nav = document.createElement('div')
   nav.className = 'mundo-nav'
+  // estrellas conseguidas / posibles del mundo en vista (motiva el 100 %)
+  let estrellasMundo = 0
+  for (let n = mundo.primero; n <= mundo.ultimo; n++) estrellasMundo += progreso[n]?.stars ?? 0
+  estrellasMundo += progreso[mundo.final]?.stars ?? 0
+  const estrellasPosibles = (mundo.ultimo - mundo.primero + 2) * 3
   const etiquetaMundo = document.createElement('span')
   etiquetaMundo.className = 'mundo-titulo'
-  etiquetaMundo.textContent = `🗺️ Mundo ${mundo.num}`
+  etiquetaMundo.textContent =
+    estrellasMundo >= estrellasPosibles
+      ? `🗺️ Mundo ${mundo.num} · 👑 ¡100 %!`
+      : `🗺️ Mundo ${mundo.num} · ⭐ ${estrellasMundo}/${estrellasPosibles}`
   const btnMundos = document.createElement('button')
   btnMundos.className = 'mundo-flecha'
   btnMundos.textContent = '🪐'
@@ -791,6 +799,23 @@ export function mostrarResultados(
   caja.append(titulo, estrellas, tiempo, monedas, record, fila)
   pantalla.appendChild(caja)
   pantalla.classList.remove('hidden')
+  lanzarConfeti(datos.estrellas)
+}
+
+/** Lluvia de confeti al superar un nivel (más cantidad con más estrellas). */
+function lanzarConfeti(estrellas: number): void {
+  const EMOJIS = ['🎉', '⭐', '🎊', '✨', '🟥', '🟨', '🟦', '🟩']
+  const cuantos = 14 + estrellas * 8
+  for (let i = 0; i < cuantos; i++) {
+    const s = document.createElement('span')
+    s.className = 'confeti'
+    s.textContent = EMOJIS[(i * 7 + estrellas) % EMOJIS.length]
+    s.style.left = `${((i * 37 + 13) % 96) + 2}%`
+    s.style.animationDuration = `${1.8 + ((i * 13) % 10) / 6}s`
+    s.style.animationDelay = `${((i * 11) % 8) / 10}s`
+    document.body.appendChild(s)
+    setTimeout(() => s.remove(), 4200)
+  }
 }
 
 export function ocultarPantallas(): void {

@@ -1,6 +1,7 @@
 import { Level, TILE } from '../game/level'
 import { Player } from '../game/player'
 import { dibujarPersonaje } from './character'
+import { Particulas } from './particles'
 import type { Tema } from '../levels/types'
 
 /** Filas visibles en pantalla; los niveles más altos usan cámara vertical. */
@@ -126,7 +127,11 @@ export class Renderer {
     this.xianaDibujo(level)
     this.meta(level)
     this.personajeConEfectos(level, player, numeroPersonaje ?? level.data.numero)
+    this.particulas.draw(ctx)
   }
+
+  /** Partículas de jugo visual (main las emite y actualiza). */
+  readonly particulas = new Particulas()
 
   private personajeConEfectos(level: Level, player: Player, numero: number): void {
     const ctx = this.ctx
@@ -162,22 +167,32 @@ export class Renderer {
     }
     // invisible: se ve translúcido (el jugador sí se ve a sí mismo)
     if (player.invisibleT > 0) ctx.globalAlpha = 0.35
-    // al ser lanzado por el Remolino, el personaje gira
-    const girando = player.girandoT > 0
-    if (girando) {
-      ctx.save()
-      ctx.translate(player.x + player.w / 2, player.y + player.h / 2)
-      ctx.rotate(player.girandoT * 20)
-      ctx.translate(-(player.x + player.w / 2), -(player.y + player.h / 2))
+    // squash & stretch: estirado en el aire, aplastado al aterrizar fuerte
+    const cxP = player.x + player.w / 2
+    const piesY = player.y + player.h
+    let sx = 1
+    let sy = 1
+    if (player.squashT > 0) {
+      const f = player.squashT / 0.16
+      sx = 1 + 0.22 * f
+      sy = 1 - 0.22 * f
+    } else if (!player.enSuelo) {
+      const v = Math.min(1, Math.abs(player.vy) / 650)
+      sx = 1 - 0.08 * v
+      sy = 1 + 0.12 * v
     }
-    dibujarPersonaje(
-      ctx,
-      numero,
-      player.x + player.w / 2,
-      player.y + player.h,
-      player.mirando,
-    )
-    if (girando) ctx.restore()
+    ctx.save()
+    ctx.translate(cxP, piesY)
+    ctx.scale(sx, sy)
+    ctx.translate(-cxP, -piesY)
+    // al ser lanzado por el Remolino, el personaje gira
+    if (player.girandoT > 0) {
+      ctx.translate(cxP, player.y + player.h / 2)
+      ctx.rotate(player.girandoT * 20)
+      ctx.translate(-cxP, -(player.y + player.h / 2))
+    }
+    dibujarPersonaje(ctx, numero, cxP, piesY, player.mirando)
+    ctx.restore()
     ctx.globalAlpha = 1
     // sombrero rojo puesto mientras quede teletransporte
     if (player.teleUsos > 0) {

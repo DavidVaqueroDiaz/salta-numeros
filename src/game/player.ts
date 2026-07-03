@@ -35,6 +35,10 @@ export class Player {
   estrellaT = 0
   /** segundos restantes girando por el ataque del Remolino (solo visual) */
   girandoT = 0
+  /** segundos restantes de "aplastamiento" tras aterrizar fuerte (visual) */
+  squashT = 0
+  /** true SOLO el frame en que aterriza fuerte (main emite el polvo) */
+  aterrizoFuerte = false
   /** evita rebotar entre tubos al instante */
   tuboCooldownT = 0
   /** ¿está nadando ahora mismo? (lo rellena update) */
@@ -97,6 +101,10 @@ export class Player {
   }
 
   update(dt: number, level: Level): void {
+    // para el squash & stretch: ¿venía por el aire y cayendo rápido?
+    const estabaEnAire = !this.enSuelo && this.plataforma === null
+    this.aterrizoFuerte = false
+    this.squashT = Math.max(0, this.squashT - dt)
     // --- Temporizadores de poderes ---
     this.invisibleT = Math.max(0, this.invisibleT - dt)
     this.volarT = Math.max(0, this.volarT - dt)
@@ -189,8 +197,14 @@ export class Player {
         this.vy = Math.max(this.vy - 3400 * dt, -280)
       }
     }
+    const vyAntesDeAterrizar = this.vy
     this.y += this.vy * dt
     this.resolverVertical(level)
+    // aterrizaje fuerte → aplastamiento breve (y main suelta el polvo)
+    if (estabaEnAire && this.enSuelo && vyAntesDeAterrizar > 420) {
+      this.squashT = 0.16
+      this.aterrizoFuerte = true
+    }
 
     // --- Aterrizar sobre plataformas (solo cayendo y desde arriba) ---
     if (this.vy >= 0 && !this.enSuelo) {

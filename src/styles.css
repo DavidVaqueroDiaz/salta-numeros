@@ -119,8 +119,8 @@ body {
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
-#hud-exit {
-  margin-left: auto;
+#hud-exit,
+#hud-pause {
   pointer-events: auto;
   width: 56px;
   height: 56px;
@@ -130,6 +130,54 @@ body {
   background: rgba(255, 255, 255, 0.85);
   box-shadow: var(--sombra);
   cursor: pointer;
+}
+
+#hud-pause {
+  margin-left: auto;
+}
+
+/* Overlay de pausa (toca para seguir) */
+#pausa {
+  background: rgba(29, 53, 87, 0.55);
+  cursor: pointer;
+}
+
+.pausa-caja {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 26px;
+  padding: 30px 60px;
+  text-align: center;
+  box-shadow: var(--sombra);
+  font-size: 56px;
+}
+
+.pausa-caja p {
+  margin: 6px 0 0;
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--texto);
+}
+
+.pausa-caja .pausa-sub {
+  font-size: 17px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+/* Confeti de la pantalla de resultados */
+.confeti {
+  position: fixed;
+  top: -40px;
+  font-size: 26px;
+  pointer-events: none;
+  animation: confeti-cae linear forwards;
+  z-index: 30;
+}
+
+@keyframes confeti-cae {
+  to {
+    transform: translateY(110vh) rotate(720deg);
+  }
 }
 
 /* ---------- Controles táctiles ---------- */

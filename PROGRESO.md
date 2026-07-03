@@ -537,11 +537,51 @@ Tema espacio, mates reto3/operacion/mitadDoble.
   hueco de esas 6 fases es ahora de 3-4 tiles.
 - Estado: estricto ✅, normal ✅, check-levels ✅, build ✅.
 
-- Cinemática de cierre + contador total de estrellas con premio al 100 %.
-- Pistas visuales con bloquecitos al fallar una puerta.
-- Música chiptune + squash & stretch + vibración + botón pausa.
-- Informe para papá: % de aciertos por tipo de operación.
-- Hosting HTTPS/tablet: solo si a Joel le gusta el juego.
+- Hosting HTTPS/tablet: ✅ ya hecho (GitHub Pages).
+
+## 🎨 PLAN DE PULIDO PROFESIONAL (2026-07-03, Fable 5) — EN CURSO
+
+Objetivo: que el juego se sienta "de verdad" y encante a Joel. Se implementa
+por fases con commit al final de cada una. **Si esta sesión se corta, retomar
+por la primera casilla sin marcar** (cada fase es independiente).
+
+### Fase A — Game feel (jugo visual) ✅ HECHA
+- [x] **Squash & stretch**: el personaje se estira al saltar/caer y se aplasta
+      al aterrizar fuerte (`player.squashT` + escala anclada a los pies en
+      `renderer.personajeConEfectos`).
+- [x] **Partículas** (`src/engine/particles.ts`, clase `Particulas` en el
+      renderer, update desde main): chispas doradas al coger moneda, polvo al
+      aterrizar fuerte, estrellitas al pisotear un bicho.
+- [x] **Confeti** en la pantalla de resultados (spans emoji con animación CSS
+      `confeti-cae`, en `mostrarResultados`).
+- [x] **Botón pausa** ⏸ en el HUD (estado `'pausa'`, overlay #pausa, tecla P o
+      Escape; el cronómetro no corre en pausa).
+- [x] **Contador de estrellas del mundo** en el menú (junto al título del
+      mundo: ⭐ conseguidas/posibles del mundo en vista).
+
+### Fase B — Música chiptune ⏳ PENDIENTE
+- [ ] `src/game/music.ts`: melodía chiptune en bucle con WebAudio (osciladores,
+      sin ficheros). Melodías distintas por tema (pradera/cueva/castillo…) o
+      una general + una de jefe.
+- [ ] Ajuste **🎵 Música ON/OFF** separado del sonido (settings.ts + diálogo de
+      ajustes + sync.ts). Arrancar tras el primer toque (política de autoplay).
+
+### Fase C — Pistas educativas en las puertas ⏳ PENDIENTE
+- [ ] Al fallar una respuesta en una puerta, mostrar una PISTA visual con
+      bloquecitos estilo Numberblocks (p. ej. 3+4 → dibujar 3 cubitos + 4
+      cubitos en el modal, mathDoor.ts). Al segundo fallo, pista más explícita.
+
+### Fase D — Informe para papá ⏳ PENDIENTE
+- [ ] Registrar aciertos/fallos por tipo de operación en localStorage
+      (`salta-numeros-informe`, sumar en mathDoor/main al responder).
+- [ ] Pantalla "📊 Informe" en Ajustes: % de aciertos por tipo (suma, resta,
+      tablas…), para saber qué practicar con Joel. Añadir la clave a sync.ts.
+
+### Fase E — Cierre con premio ⏳ PENDIENTE
+- [ ] Cinemática de cierre al completar el jefe del Mundo 3 (los tres
+      monstruos vencidos, Xiana y el personaje celebran).
+- [ ] Premio al 100 %: mensaje/corona especial si todas las fases de un mundo
+      están a 3 estrellas.
 
 ## Notas técnicas
 
