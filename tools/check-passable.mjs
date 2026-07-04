@@ -132,22 +132,29 @@ for (const fichero of ficheros) {
     parDeTubo.set(tubos[i + 1].join(), tubos[i])
   }
 
-  // el arco del salto no puede atravesar un muro macizo: cada columna
-  // intermedia necesita al menos un hueco por el que pasar
+  // Un salto NO atraviesa bloques sólidos (ni por arriba: los techos frenan
+  // la subida). Se acepta si existe un camino en L despejado:
+  //   ruta A: SUBIR en la columna de despegue y CRUZAR a la altura de llegada
+  //   ruta B: CRUZAR a la altura de salida y SUBIR/CAER en la columna destino
+  const libre = (cc, rr) => rr < 0 || !SOLIDO.has(ch(cc, rr))
   const arcoLibre = (c, r, nc, nr) => {
-    const dirPaso = nc > c ? 1 : -1
-    const techo = Math.max(0, Math.min(r, nr) - 7)
-    for (let cc = c + dirPaso; cc !== nc; cc += dirPaso) {
-      let libre = false
-      for (let rr = techo; rr <= Math.max(r, nr); rr++) {
-        if (!SOLIDO.has(ch(cc, rr))) {
-          libre = true
-          break
-        }
-      }
-      if (!libre) return false
+    const arriba = Math.min(r, nr)
+    const abajo = Math.max(r, nr)
+    const columnaLibre = (col) => {
+      for (let rr = arriba - 1; rr <= abajo - 1; rr++) if (!libre(col, rr)) return false
+      return true
     }
-    return true
+    const cruceLibre = (fila) => {
+      const d = nc > c ? 1 : -1
+      for (let cc = c + d; cc !== nc; cc += d) {
+        if (!libre(cc, fila) && !libre(cc, fila - 1)) return false
+      }
+      return true
+    }
+    if (c === nc) return columnaLibre(c)
+    const rutaA = columnaLibre(c) && cruceLibre(Math.max(0, nr - 1))
+    const rutaB = cruceLibre(r) && columnaLibre(nc)
+    return rutaA || rutaB
   }
 
   // BFS
@@ -199,7 +206,7 @@ for (const fichero of ficheros) {
           const nc = c + dc
           const nr = r + dr
           if (!transitable(nc, nr)) continue
-          if (Math.abs(dc) >= 2 && !arcoLibre(c, r, nc, nr)) continue
+          if (!arcoLibre(c, r, nc, nr)) continue // el bote también choca con techos
           visita(nc, nr)
         }
       }
@@ -214,7 +221,7 @@ for (const fichero of ficheros) {
         const nc = c + dc
         const nr = r + dr
         if (!transitable(nc, nr)) continue
-        if (Math.abs(dc) >= 2 && !arcoLibre(c, r, nc, nr)) continue
+        if (!arcoLibre(c, r, nc, nr)) continue
         visita(nc, nr)
       }
     }

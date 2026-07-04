@@ -50,7 +50,9 @@ function torre({ v = 0, dura = false }) {
   z.pon(suelo - 1, 5, 'G')
 
   // --- Tramo 1: pasillo bajo (techo en fila 24, hueco de 3) con guardianes ---
-  z.rellena(suelo - 4, 6, 27, '#')
+  // el techo llega solo hasta la col 25: desde su azotea NO se alcanza la
+  // cornisa (dc 8), así que el trampolín es de verdad el único camino
+  z.rellena(suelo - 4, 6, 25, '#')
   z.pon(suelo - 1, 12, 'E')
   if (dura) z.pon(suelo - 1, 22, 'E')
   z.pon(suelo - 1, 17, '^^')
@@ -59,11 +61,12 @@ function torre({ v = 0, dura = false }) {
   z.pon(suelo - 2, 20, 'o')
   z.pon(suelo - 2, 25, 'o')
 
-  // --- Sala del trampolín 1 (cols 28-39): subida de 10, SOLO con el bote ---
-  z.pon(suelo - 1, 32 + (v % 3), 'J')
-  z.rellena(suelo - 10, 30, 40, '#') // cornisa de llegada (pasa sobre el muro)
-  z.pon(suelo - 11, 31, 'ooo')
-  z.pon(suelo - 11, 37, 'oo')
+  // --- Sala del trampolín 1 (cols 26-39): subida de 10, SOLO con el bote ---
+  // el trampolín tiene CIELO ABIERTO encima; la cornisa de llegada queda AL
+  // LADO (cols 33-40, pasa sobre el muro): botas recto y derivas a la derecha
+  z.pon(suelo - 1, 30, 'J')
+  z.rellena(suelo - 10, 33, 40, '#')
+  z.pon(suelo - 11, 35, 'ooo')
   z.col(40, suelo - 9, suelo - 1, '#') // muro: sella el paso por abajo
 
   // --- Tramo 2 (piso fila 22): puente parpadeante sobre foso de pinchos ---
@@ -77,21 +80,24 @@ function torre({ v = 0, dura = false }) {
   z.pon(piso2 - 3, 52, 'o')
   z.rellena(piso2, 54, 58, '#')
   z.pon(piso2 - 1, 55, 'C')
+  z.pon(piso2 - 5, 57, '#') // techo de la puerta: no se puede saltar por encima
   for (let r = piso2 - 4; r <= piso2 - 1; r++) z.pon(r, 57, 'D')
 
   // --- Sala del trampolín 2 (cols 59-65): subida de 9, SOLO con el bote ---
+  // ídem: cielo abierto sobre el muelle, plataforma de llegada al lado
   z.rellena(piso2, 59, 65, '#')
-  z.pon(piso2 - 1, 62, 'J')
-  z.rellena(piso2 - 9, 57, 65, '#')
-  z.pon(piso2 - 10, 60, 'oo')
+  z.pon(piso2 - 1, 60, 'J')
+  z.rellena(piso2 - 9, 63, 65, '#')
+  z.pon(piso2 - 10, 64, 'o')
 
-  // --- Tramo 3: cornisas con vigilante hasta la meta ---
-  z.rellena(piso2 - 12, 50, 55, '#')
-  if (dura) z.pon(piso2 - 13, 52, 'V')
-  else z.pon(piso2 - 13, 52, 'o')
-  z.rellena(piso2 - 15, 58, 64, '#')
-  z.pon(piso2 - 16, 61, 'M')
-  z.pon(piso2 - 16, 59, 'o')
+  // --- Tramo 3: cornisas en zigzag (con vigilante en difícil) hasta la meta ---
+  z.rellena(piso2 - 12, 57, 61, '#')
+  if (dura) z.pon(piso2 - 13, 59, 'V')
+  else z.pon(piso2 - 13, 59, 'o')
+  z.rellena(piso2 - 15, 50, 56, '#')
+  z.pon(piso2 - 16, 53, 'M')
+  z.pon(piso2 - 16, 50, 'o')
+  z.pon(piso2 - 16, 56, 'o')
 
   return v % 2 ? espejo(z.filas()) : z.filas()
 }

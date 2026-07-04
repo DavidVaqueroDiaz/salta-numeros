@@ -642,6 +642,22 @@ trampolines decorativos, y faltaba avanzar a la derecha. Rediseño total:
   obligatorios (las 18 torres salen imposibles sin ellos; con ellos, todo
   pasa). parMs subido a 175-245 s.
 
+### Arreglo crítico: trampolines tapados por bloques (2026-07-04)
+
+Vaquero encontró la fase 109 imposible: la cornisa de llegada estaba JUSTO
+ENCIMA del trampolín → el bote chocaba con los bloques. Doble arreglo:
+- **Diseño**: los dos trampolines de cada torre tienen ahora CIELO ABIERTO
+  (la cornisa/plataforma de llegada queda AL LADO: botas recto y derivas);
+  el techo del pasillo se recortó (col ≤25) para que no haya atajo por la
+  azotea, y la puerta de mates lleva techo (no se salta). Verificado en juego:
+  36/36 trampolines con 10 filas libres encima; bote real de 7,8 tiles.
+- **Verificador endurecido (permanente)**: `arcoLibre` ahora exige un camino
+  en L despejado para CADA salto y bote (subir en la columna de despegue y
+  cruzar a la altura de llegada, o cruzar primero y subir en la de destino):
+  los techos frenan la subida como en el juego real. Con este modelo, el fallo
+  de "bloques sobre el trampolín" es imposible que vuelva a colarse. Los 4
+  modos en verde (mapas, normal, estricto, y sin-trampolín = solo 18 torres).
+
 ### Fase F — Flujo y confort ✅ HECHA (2026-07-04, Fable 5)
 - [x] **➡️ Siguiente** en resultados (botón protagonista; Repetir pasa a
       secundario): encadena fases sin ir al menú. `nivelSiguiente(n)` en main:
