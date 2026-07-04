@@ -642,6 +642,17 @@ trampolines decorativos, y faltaba avanzar a la derecha. Rediseño total:
   obligatorios (las 18 torres salen imposibles sin ellos; con ellos, todo
   pasa). parMs subido a 175-245 s.
 
+### Dificultad también bajo el agua (2026-07-04)
+
+Vaquero detectó que subir la dificultad no añadía bichos marinos: el escalado
+(`generarBichosExtra`) solo ponía enemigos de TIERRA. Nuevo
+`Level.generarBichosMarinos()`: en Medio/Difícil añade peces (y medusas donde
+hay agua vertical) en celdas de agua con sitio para nadar, lejos de la
+salida/meta/jefe/fauna previa (distancia mínima 3-6), objetivo ≈ fauna base ×
+factor. En Fácil no cambia nada; si un mapa no tiene fauna marina de base, su
+agua se respeta (decorativa). Verificado por modo: n25 3→5🐟+1🪼, n79 10→20🐟,
+n116 3→8🐟, n130 5→11🐟/3→5🪼 (Fácil idéntico).
+
 ### Arreglo crítico: trampolines tapados por bloques (2026-07-04)
 
 Vaquero encontró la fase 109 imposible: la cornisa de llegada estaba JUSTO

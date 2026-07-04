@@ -173,7 +173,61 @@ export class Level {
     }
 
     this.generarBichosExtra()
+    this.generarBichosMarinos()
     this.generarItemsEspeciales()
+  }
+
+  /**
+   * En Medio/Difícil el AGUA también se puebla más: peces y medusas extra en
+   * celdas de agua con sitio para nadar, lejos de la salida, la meta y de
+   * otros bichos marinos. En Fácil no cambia nada.
+   */
+  private generarBichosMarinos(): void {
+    const factor = paramsDificultad().bichosFactor
+    if (factor <= 0) return
+    const base = this.peces.length + this.medusas.length
+    if (base === 0) return // sin fauna marina de base, el agua es decorativa
+    const objetivo = Math.max(2, Math.round(base * factor * 0.8))
+
+    // candidatos: agua con agua a los lados (y si también arriba/abajo, vale
+    // para una medusa, que flota en vertical)
+    const candidatos: { c: number; r: number; vertical: boolean }[] = []
+    for (let c = 2; c < this.cols - 2; c++) {
+      for (let r = 1; r <= this.rows - 2; r++) {
+        if (this.tileAt(c, r) !== AGUA) continue
+        if (this.tileAt(c - 1, r) !== AGUA || this.tileAt(c + 1, r) !== AGUA) continue
+        const vertical = this.tileAt(c, r - 2) === AGUA && this.tileAt(c, r + 2) === AGUA
+        candidatos.push({ c, r, vertical })
+      }
+    }
+    if (candidatos.length === 0) return
+
+    // sitios a respetar: salida (más margen), meta, jefe, Xiana y fauna previa
+    const ocupadas = [
+      { c: Math.round(this.spawn.x / TILE), r: Math.round(this.spawn.y / TILE), d: 6 },
+      ...(this.goal.w > 0
+        ? [{ c: Math.round(this.goal.x / TILE), r: Math.round(this.goal.y / TILE), d: 3 }]
+        : []),
+      ...(this.jefe ? [{ c: Math.round(this.jefe.x / TILE), r: Math.round(this.jefe.y / TILE), d: 4 }] : []),
+      ...(this.xiana ? [{ c: Math.round(this.xiana.x / TILE), r: Math.round(this.xiana.y / TILE), d: 4 }] : []),
+      ...this.peces.map((p) => ({ c: Math.round(p.x / TILE), r: Math.round(p.rect().y / TILE), d: 3 })),
+      ...this.medusas.map((m) => ({ c: Math.round(m.x / TILE), r: Math.round(m.rect().y / TILE), d: 3 })),
+    ]
+    const libre = (c: number, r: number): boolean =>
+      ocupadas.every((o) => Math.max(Math.abs(o.c - c), Math.abs(o.r - r)) >= o.d)
+
+    const paso = Math.max(1, Math.floor(candidatos.length / (objetivo * 2)))
+    let puestos = 0
+    let alternar = 0
+    for (let i = 0; i < candidatos.length && puestos < objetivo; i += paso) {
+      const { c, r, vertical } = candidatos[i]
+      if (!libre(c, r)) continue
+      if (vertical && alternar % 3 === 2) this.medusas.push(new Medusa(c, r))
+      else this.peces.push(new Pez(c, r))
+      ocupadas.push({ c, r, d: 3 })
+      alternar++
+      puestos++
+    }
   }
 
   /**
